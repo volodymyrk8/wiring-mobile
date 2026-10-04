@@ -1,47 +1,76 @@
-import { NativeTabs } from "expo-router/unstable-native-tabs";
-import { useEffect } from "react";
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/auth";
 import { useTheme } from "../../src/theme";
-
-const BADGE_REFRESH_MS = 30000;
-
-/**
- * Native tab bar: UITabBar on iOS (Liquid Glass on iOS 26+, collapses while scrolling),
- * Material bottom navigation on Android. Badges come from /api/me.
- */
+import { ProductNav } from "../../src/ui/ProductNav";
+import { fonts } from "../../src/ui/Typography";
 export default function TabsLayout() {
   const t = useTheme();
-  const { user, refresh } = useAuth();
-
-  useEffect(() => {
-    const timer = setInterval(() => void refresh(), BADGE_REFRESH_MS);
-    return () => clearInterval(timer);
-  }, [refresh]);
-
-  const unread = user?.unread ?? 0;
-  const likes = user?.likes_in ?? 0;
-  const badge = (n: number) => (n > 0 ? String(n > 99 ? "99+" : n) : undefined);
-
+  const { user } = useAuth();
   return (
-    <NativeTabs tintColor={t.accent} minimizeBehavior="onScrollDown" badgeBackgroundColor={t.accent}>
-      <NativeTabs.Trigger name="feed">
-        <NativeTabs.Trigger.Label>Лента</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: "flame", selected: "flame.fill" }} md="local_fire_department" />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="likes">
-        <NativeTabs.Trigger.Label>Лайки</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: "heart", selected: "heart.fill" }} md="favorite" />
-        <NativeTabs.Trigger.Badge hidden={!likes}>{badge(likes)}</NativeTabs.Trigger.Badge>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="chats">
-        <NativeTabs.Trigger.Label>Чаты</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: "bubble.left.and.bubble.right", selected: "bubble.left.and.bubble.right.fill" }} md="chat" />
-        <NativeTabs.Trigger.Badge hidden={!unread}>{badge(unread)}</NativeTabs.Trigger.Badge>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="profile">
-        <NativeTabs.Trigger.Label>Профиль</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: "person.crop.circle", selected: "person.crop.circle.fill" }} md="account_circle" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs
+      tabBar={() => <ProductNav />}
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: t.text,
+        tabBarInactiveTintColor: t.muted,
+        tabBarStyle: { backgroundColor: t.card, borderTopColor: t.border },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
+        tabBarBadgeStyle: { backgroundColor: t.accent, color: t.accentText },
+      }}
+    >
+      <Tabs.Screen name="home" options={{ title: "Главная" }} />
+      <Tabs.Screen
+        name="feed"
+        options={{
+          title: "Лента",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="albums-outline" color={color} size={22} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="likes"
+        options={{
+          title: "Лайки",
+          tabBarBadge: user?.likes_in || undefined,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="heart-outline" color={color} size={22} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chats"
+        options={{
+          title: "Чаты",
+          tabBarBadge: user?.unread || undefined,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="chatbubbles-outline" color={color} size={22} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="for-you"
+        options={{
+          title: "Для тебя",
+          href:
+            user?.jev_feed_unlocked && user?.jev_feed_enabled
+              ? undefined
+              : null,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="sparkles-outline" color={color} size={22} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Профиль",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-circle-outline" color={color} size={23} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }

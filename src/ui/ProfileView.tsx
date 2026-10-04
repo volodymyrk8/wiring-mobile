@@ -1,59 +1,159 @@
+import { useState, useRef } from "react";
 import { Image } from "expo-image";
-import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
+import { mediaSource } from "../api/client";
 import type { Person } from "../api/types";
-import { useTagLabel } from "../catalog";
-import { radius, shadow, useTheme } from "../theme";
-import { Card, Chip, SectionTitle } from "./kit";
-import { photosOf } from "./SwipeCard";
-
+import { useCatalog, useTagLabel } from "../catalog";
+import { useTheme } from "../theme";
+import { useLayout } from "./layout";
+import { Hint } from "./Page";
+import { Chip, SectionTitle } from "./kit";
+import { Text, fonts } from "./Typography";
 export function ProfileView({ person }: { person: Person }) {
+  const gallery = useRef<ScrollView>(null);
   const t = useTheme();
   const label = useTagLabel();
-  const { width } = useWindowDimensions();
-  const size = width - 32;
-  const photos = photosOf(person);
+  const catalog = useCatalog();
+  const { contentWidth, height } = useLayout();
+  const width = contentWidth - 32;
   const [page, setPage] = useState(0);
+  const [aspect, setAspect] = useState(0.75);
+  const photos = person.photos?.length
+    ? person.photos
+    : person.photo
+      ? [person.photo]
+      : [];
+  const h = Math.min(height * 0.66, width / aspect);
   return (
     <View>
-      <View style={[{ borderRadius: radius.lg, overflow: "hidden", backgroundColor: t.chip }, shadow(2)]}>
-        <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / size))}>
-          {photos.length ? (
-            photos.map((uri) => <Image key={uri} source={{ uri }} style={{ width: size, height: size * 1.15 }} contentFit="cover" accessibilityLabel={`Фото: ${person.name}`} />)
-          ) : (
-            <View style={{ width: size, height: size * 0.6 }} />
-          )}
+      <View
+        style={{
+          overflow: "hidden",
+          borderRadius: 26,
+          backgroundColor: t.photo,
+        }}
+      >
+        <ScrollView
+          ref={gallery}
+          horizontal
+          pagingEnabled
+          directionalLockEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) =>
+            setPage(Math.round(e.nativeEvent.contentOffset.x / width))
+          }
+        >
+          {photos.map((p, i) => (
+            <Image
+              key={i}
+              source={mediaSource(p)}
+              style={{ width, height: h }}
+              contentFit="contain"
+              accessibilityLabel={`Фото ${i + 1} из ${photos.length}: ${person.name}`}
+              onLoad={(e) => {
+                if (i === page && e.source.width)
+                  setAspect(e.source.width / e.source.height);
+              }}
+            />
+          ))}
         </ScrollView>
-        {photos.length > 1 && <Text style={s.counter}>{page + 1}/{photos.length}</Text>}
       </View>
-      <View style={{ paddingHorizontal: 4, paddingTop: 16 }}>
-        <Text style={{ color: t.text, fontSize: 28, fontWeight: "800" }}>{person.name}{person.age ? `, ${person.age}` : ""}</Text>
-        {!!(person.city || person.job) && <Text style={{ color: t.muted, fontSize: 15, marginTop: 2 }}>{[person.city, person.job].filter(Boolean).join(" · ")}</Text>}
-      </View>
-      {!!person.bio && <Card style={{ marginTop: 14 }}><Text style={{ color: t.text, fontSize: 16, lineHeight: 23 }}>{person.bio}</Text></Card>}
-      {!!person.neuro?.length && (
-        <View style={{ marginTop: 14 }}>
-          <SectionTitle>Особенности</SectionTitle>
-          <View style={s.wrap}>{person.neuro.map((id) => <Chip key={id} label={label(id)} />)}</View>
+      {photos.length > 1 && (
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+          {photos.map((p, i) => (
+            <Pressable
+              key={i}
+              accessibilityRole="button"
+              accessibilityLabel={`Фото ${i + 1}`}
+              accessibilityState={{ selected: i === page }}
+              onPress={() => {
+                setPage(i);
+                gallery.current?.scrollTo({ x: width * i, animated: true });
+              }}
+            >
+              <Image
+                source={mediaSource(p)}
+                style={{
+                  width: 44,
+                  height: 56,
+                  borderRadius: 8,
+                  borderWidth: i === page ? 2 : 0,
+                  borderColor: t.accent,
+                }}
+              />
+            </Pressable>
+          ))}
         </View>
       )}
-      {!!person.vibe?.length && (
-        <View style={{ marginTop: 6 }}>
-          <SectionTitle>Вайб</SectionTitle>
-          <View style={s.wrap}>{person.vibe.map((id) => <Chip key={id} label={label(id)} />)}</View>
-        </View>
+      <Text
+        style={{
+          fontFamily: fonts.serif,
+          fontSize: 32,
+          color: t.text,
+          marginTop: 16,
+        }}
+      >
+        {person.online ? "● " : ""}
+        {person.name}
+        {person.age ? `, ${person.age}` : ""}
+      </Text>
+      <Hint>
+        {[
+          catalog?.genders?.find((i) => i.id === person.gender)?.label,
+          catalog?.looking_for?.find((i) => i.id === person.looking_for)?.label,
+          person.city,
+          person.job,
+          person.height ? `${person.height} см` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </Hint>
+      <Hint>
+        Диагнозы не проверяем: люди указывают их сами. Если заметим ложь,
+        аккаунт может быть забанен.
+      </Hint>
+      {!!person.bio && (
+        <Text
+          style={{
+            color: t.text,
+            fontSize: 16,
+            lineHeight: 24,
+            marginBottom: 16,
+          }}
+        >
+          {person.bio}
+        </Text>
       )}
-      {!!person.intents?.length && (
-        <View style={{ marginTop: 6 }}>
-          <SectionTitle>Что ищет</SectionTitle>
-          <View style={s.wrap}>{person.intents.map((id) => <Chip key={id} label={label(id)} />)}</View>
+      {!!person.communication && (
+        <>
+          <SectionTitle>как тебе писать</SectionTitle>
+          <Hint>{person.communication}</Hint>
+        </>
+      )}
+      {person.prompts?.map((p) => (
+        <View key={p.id}>
+          <SectionTitle>
+            {catalog?.prompts?.find((i) => i.id === p.id)?.label || p.id}
+          </SectionTitle>
+          <Hint>{p.answer}</Hint>
         </View>
+      ))}
+      {[
+        ["Особенности", person.neuro],
+        ["Вайб", person.vibe],
+        ["Что ищет", person.intents],
+      ].map(([title, ids]) =>
+        Array.isArray(ids) && ids.length ? (
+          <View key={String(title)}>
+            <SectionTitle>{String(title)}</SectionTitle>
+            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+              {ids.map((id) => (
+                <Chip key={id} label={label(id)} />
+              ))}
+            </View>
+          </View>
+        ) : null,
       )}
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  wrap: { flexDirection: "row", flexWrap: "wrap" },
-  counter: { position: "absolute", top: 12, right: 12, color: "#fff", backgroundColor: "rgba(0,0,0,0.45)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, overflow: "hidden", fontSize: 12, fontWeight: "700" },
-});

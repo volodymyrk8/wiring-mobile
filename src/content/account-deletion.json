@@ -1,0 +1,168 @@
+[
+  {
+    "type": "p",
+    "parts": [
+      {
+        "text": "WIRING — сервис знакомств. Аккаунт можно удалить самому, если вы можете в него войти."
+      }
+    ]
+  },
+  {
+    "type": "h2",
+    "parts": [
+      {
+        "text": "Как удалить"
+      }
+    ]
+  },
+  {
+    "type": "li",
+    "parts": [
+      {
+        "text": "Откройте WIRING и войдите."
+      }
+    ]
+  },
+  {
+    "type": "li",
+    "parts": [
+      {
+        "text": "Перейдите в «Профиль»."
+      }
+    ]
+  },
+  {
+    "type": "li",
+    "parts": [
+      {
+        "text": "Нажмите «Удалить аккаунт»."
+      }
+    ]
+  },
+  {
+    "type": "li",
+    "parts": [
+      {
+        "text": "Введите текущий пароль и подтвердите."
+      }
+    ]
+  },
+  {
+    "type": "p",
+    "parts": [
+      {
+        "text": "Анкета скрывается сразу: её не видно в ленте и в чатах. Сессия на этом устройстве заканчивается."
+      }
+    ]
+  },
+  {
+    "type": "h2",
+    "parts": [
+      {
+        "text": "Семь суток, чтобы передумать"
+      }
+    ]
+  },
+  {
+    "type": "p",
+    "parts": [
+      {
+        "text": "В течение 7 суток вход с той же почтой и паролем возвращает аккаунт. После этих 7 суток тот же вход аккаунт не восстанавливает."
+      }
+    ]
+  },
+  {
+    "type": "h2",
+    "parts": [
+      {
+        "text": "Что удаляется"
+      }
+    ]
+  },
+  {
+    "type": "p",
+    "parts": [
+      {
+        "text": "После этих 7 суток ежедневная очистка убирает фотографии и их файлы, переписку, лайки и отказы, историю просмотра ленты, отметки анкеты, почту, пароль и поля анкеты (имя, возраст, город, текст о себе и остальные). Очистка идёт раз в сутки, поэтому это случается в течение суток после этих 7 суток, не в ту же минуту."
+      }
+    ]
+  },
+  {
+    "type": "h2",
+    "parts": [
+      {
+        "text": "Что остаётся"
+      }
+    ]
+  },
+  {
+    "type": "p",
+    "parts": [
+      {
+        "text": "Номер аккаунта остаётся, без почты и полей анкеты, вместе с датой удаления. Номер другому человеку не отдаётся. Отдельного срока хранения по закону здесь нет. Если закон потребует хранить какую-то запись дольше, она хранится столько, сколько требует закон."
+      }
+    ]
+  },
+  {
+    "type": "h2",
+    "parts": [
+      {
+        "text": "Если войти не получается"
+      }
+    ]
+  },
+  {
+    "type": "p",
+    "parts": [
+      {
+        "text": "Напишите на "
+      },
+      {
+        "text": "support@wiring.date",
+        "href": "mailto:support@wiring.date"
+      },
+      {
+        "text": " и укажите почту аккаунта. Нужно будет подтвердить, что аккаунт ваш. Пароль в письме не отправляйте."
+      }
+    ]
+  },
+  {
+    "type": "h2",
+    "parts": [
+      {
+        "text": "Delete your WIRING account"
+      }
+    ]
+  },
+  {
+    "type": "p",
+    "parts": [
+      {
+        "text": "Open WIRING, go to Profile, choose Delete account, enter your current password and confirm. The profile is hidden immediately and the session ends. For 7 days, signing in with the same email and password restores the account. After that, signing in does not restore it."
+      }
+    ]
+  },
+  {
+    "type": "p",
+    "parts": [
+      {
+        "text": "A daily cleanup then removes photos, messages, likes, the email, the password and the profile fields. It runs once a day, so this happens within a day after those 7 days, not at that exact minute. The account number and the deletion date stay, without the email or profile fields. That number is not given to anyone else."
+      }
+    ]
+  },
+  {
+    "type": "p",
+    "parts": [
+      {
+        "text": "If you cannot sign in, email "
+      },
+      {
+        "text": "support@wiring.date",
+        "href": "mailto:support@wiring.date"
+      },
+      {
+        "text": " and include the account email. Do not send your password. Support has to confirm the account is yours."
+      }
+    ]
+  }
+]

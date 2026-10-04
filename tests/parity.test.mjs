@@ -1,0 +1,28 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { nativeRoute } from "../src/routes.ts";
+import { initialFeed, appendFeed, removePerson } from "../src/features/feed/state.ts";
+import { sortLikeCards } from "../src/features/likes/sort.ts";
+import { createAutosave } from "../src/features/profile/autosave.ts";
+import { themes, THEME_LIST } from "../src/themeTokens.ts";
+import { defaultFilters, filtersQuery } from "../src/filtersCore.ts";
+const tick=()=>new Promise(resolve=>setTimeout(resolve,10));
+const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
+const storage=()=>{const values=new Map();return {values,getItem:async k=>values.get(k)||null,setItem:async(k,v)=>values.set(k,v),removeItem:async k=>values.delete(k)};};
+test("site routes and auth proofs map to their corresponding native screens",()=>{
+ for(const [url,path] of [["https://wiring.club/p/8","/person/8"],["/sign-in","/login"],["/me","/edit-profile"],["/p/7","/person/7"],["/chats/9","/chat/9"],["wiring://feed","/(tabs)/feed"],["https://wiring.date/?verify=proof","/verify?token=proof"],["/?reset=secret","/reset?token=secret"],["/r/ref-code","/register?ref=ref-code"],["https://evil.test/chats/2","/"],["wiring://invalid","/"]])assert.equal(nativeRoute(url),path);
+});
+test("scrolling never removes a profile; server pages merge without duplicates",()=>{const first=appendFeed(initialFeed(),{cards:[{id:1},{id:2}],has_more:true,generation:5});const next=appendFeed({...first,index:1},{cards:[{id:2},{id:3}],has_more:false});assert.deepEqual(next.cards.map(p=>p.id),[1,2,3]);assert.equal(next.index,1);assert.equal(next.generation,5);assert.equal(next.hasMore,false);assert.deepEqual(first.cards.map(p=>p.id),[1,2]);const removed=removePerson(next,1);assert.equal(removed.index,0);assert.equal(removed.cards[0].id,2);});
+test("likes sort is stable and locked identities remain at the end",()=>{const people=[{id:1,liked_at:1,age:40,name:"Яна"},{id:2,liked_at:2,age:20,name:"Ада"},{hidden:true}];assert.deepEqual(sortLikeCards(people,"newest").map(p=>p.id),[2,1,undefined]);assert.deepEqual(sortLikeCards(people,"age_desc").map(p=>p.id),[1,2,undefined]);assert.equal(people[0].id,1);});
+test("all five shared themes have readable tokens and gender uses the existing API",()=>{assert.deepEqual(THEME_LIST.map(t=>t.id),["pastel","mist","dusk","night","slate"]);for(const t of Object.values(themes)){assert.notEqual(t.bg,t.text);assert.notEqual(t.btn,t.btnText);}assert.equal(new URLSearchParams(filtersQuery({...defaultFilters(),gender:"female"})).get("gender"),"female");});
+test("an older profile response cannot overwrite or erase a newer local draft",async()=>{const disk=storage(),first=deferred();let calls=0;const saved=[];const states=[];const saver=createAutosave({key:"profile-1",initial:{name:"initial"},restored:false,storage:disk,delay:100000,save:async value=>++calls===1?first.promise:value,onSaved:v=>saved.push(v),onState:s=>states.push(s)});saver.update({name:"first"});const request=saver.save();await tick();saver.update({name:"latest"});await tick();first.resolve({name:"first"});await request;assert.deepEqual(saved,[]);assert.equal(JSON.parse(await disk.getItem("profile-1")).name,"latest");await saver.save(true);assert.deepEqual(saved,[{name:"latest"}]);assert.equal(await disk.getItem("profile-1"),null);assert.equal(states.at(-1).phase,"saved");saver.dispose();});
+test("failed autosave keeps local recovery and retry succeeds",async()=>{const disk=storage();let fail=true;const saver=createAutosave({key:"profile-2",initial:{name:"initial"},restored:false,storage:disk,delay:100000,save:async v=>{if(fail)throw new Error("offline");return v;},onSaved:()=>{},onState:()=>{}});saver.update({name:"safe"});await assert.rejects(saver.save(),/offline/);assert.equal(JSON.parse(await disk.getItem("profile-2")).name,"safe");fail=false;await saver.save();assert.equal(await disk.getItem("profile-2"),null);saver.dispose();});
+test("reopening a profile serializes writes behind its previous request",async()=>{const disk=storage(),old=deferred(),order=[];const opts={key:"profile-3",initial:{name:"old"},restored:true,storage:disk,delay:100000,onSaved:()=>{},onState:()=>{}};const first=createAutosave({...opts,save:async v=>{order.push(v.name);return old.promise;}});const one=first.save();await tick();first.dispose();const second=createAutosave({...opts,initial:{name:"new"},save:async v=>{order.push(v.name);return v;}});const two=second.save(true);await tick();assert.deepEqual(order,["old"]);old.resolve({name:"old"});await Promise.all([one,two]);assert.deepEqual(order,["old","new"]);second.dispose();});
+
+test("a delayed feed page cannot resurrect a profile after like/hide",()=>{const state=removePerson(initialFeed(),7);const late=appendFeed(state,{cards:[{id:7},{id:8},{id:8}],has_more:false});assert.deepEqual(late.cards.map(c=>c.id),[8]);});
+
+test("local Expo Go paths use the same native route contract", () => {
+  assert.equal(nativeRoute("exp://127.0.0.1:8091/--/chats/9"), "/chat/9");
+  assert.equal(nativeRoute("exp://127.0.0.1:8091/--/home"), "/(tabs)/home");
+  assert.equal(nativeRoute("exp://outside.example/--/chats/9"), "/");
+});

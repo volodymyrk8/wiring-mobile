@@ -1,231 +1,501 @@
-import { Ionicons } from "@expo/vector-icons";
+import { applyNeuroToggle } from "../src/catalogTags";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { endpoints, mediaUrl } from "../src/api/client";
-import type { Catalog, Me } from "../src/api/types";
+import { Pressable, View } from "react-native";
+import { endpoints, mediaSource } from "../src/api/client";
 import { useAuth } from "../src/auth";
-import { radius, useTheme } from "../src/theme";
-import { useGutter } from "../src/ui/layout";
+import { useCatalog } from "../src/catalog";
+import { useTheme } from "../src/theme";
+import {
+  createAutosave,
+  type SaveState,
+} from "../src/features/profile/autosave";
+import {
+  profileDraft,
+  profilePayload,
+  restoreDraft,
+  type Draft,
+} from "../src/features/profile/draft";
+import {
+  Button,
+  Chip,
+  Field,
+  Loading,
+  Row,
+  SectionTitle,
+  Toggle,
+  ErrorText,
+} from "../src/ui/kit";
+import { Page, Title, Hint, Check, Confirm } from "../src/ui/Page";
+import { Text } from "../src/ui/Typography";
 import { CityPicker } from "../src/ui/CityPicker";
-import { Button, Card, Chip, ErrorText, Field, Loading, Row, SectionTitle, Toggle } from "../src/ui/kit";
-
-type Draft = {
-  name: string; age: string; gender: string; looking_for: string; city: string; job: string; bio: string;
-  neuro: string[]; vibe: string[]; intents: string[];
-};
-
-const toggle = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
-
-function fromUser(u: Me): Draft {
-  return {
-    name: u.name || "",
-    age: u.age ? String(u.age) : "",
-    gender: u.gender || "",
-    looking_for: u.looking_for || "",
-    city: u.city && u.city !== "—" ? u.city : "",
-    job: u.job || "",
-    bio: u.bio || "",
-    neuro: u.neuro || [],
-    vibe: u.vibe || [],
-    intents: u.intents?.length ? u.intents : ["dating"],
-  };
-}
-
-export default function EditProfile() {
-  const t = useTheme();
-  const router = useRouter();
+export default function EditProfile({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
   const { user, setUser, refresh } = useAuth();
-  const gutter = useGutter();
-  const [catalog, setCatalog] = useState<Catalog | null>(null);
-  const [draft, setDraft] = useState<Draft | null>(user ? fromUser(user) : null);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const router = useRouter();
+  const catalog = useCatalog();
+  const t = useTheme();
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [state, setState] = useState<SaveState>({
+    phase: "idle",
+    local: false,
+    error: "",
+  });
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
-  const [specialConsent, setSpecialConsent] = useState(!user?.needs_special_consent);
-  const [photoConsent, setPhotoConsent] = useState(!user?.needs_photo_consent);
-
+  const [remove, setRemove] = useState<number | null>(null);
+  const [code, setCode] = useState("");
+  const saver = useRef<ReturnType<
+    typeof createAutosave<Draft, { user: NonNullable<typeof user> }>
+  > | null>(null);
+  const initialUser = useRef(user);
   useEffect(() => {
-    endpoints.catalog().then(setCatalog).catch((e) => setError(e.message));
-  }, []);
-
-  const photos = useMemo(
-    () => (user?.photos || []).filter((p): p is { id: number; url: string; is_primary?: boolean } => typeof p !== "string" && !!p.id),
-    [user],
-  );
-
-  if (!user || !draft || !catalog) return <Loading />;
-  const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((d) => (d ? { ...d, [key]: value } : d));
-  const maxPhotos = catalog.limits?.photos ?? 12;
-
-  async function addPhoto() {
-    if (!photoConsent) {
-      Alert.alert("Только свои фото", "Включи переключатель «Загружаю только свои фото».");
-      return;
-    }
-    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.85, allowsEditing: false });
-    if (picked.canceled || !picked.assets[0]) return;
-    const asset = picked.assets[0];
-    setUploading(true);
-    setError("");
-    try {
-      await endpoints.uploadPhoto(asset.uri, asset.mimeType || "image/jpeg", asset.fileName || "photo.jpg");
-      await refresh();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function makePrimary(id: number) {
-    try {
-      await endpoints.primaryPhoto(id);
-      await refresh();
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
-
-  function removePhoto(id: number) {
-    Alert.alert("Удалить фото?", "", [
-      { text: "Отмена", style: "cancel" },
-      { text: "Удалить", style: "destructive", onPress: () => endpoints.deletePhoto(id).then(refresh).catch((e) => setError(e.message)) },
-    ]);
-  }
-
-  // What blocks saving at all (the server rejects it even as a draft) and what only keeps the
-  // profile out of the feed (saved as a draft).
-  const hardMissing = [
-    !(draft.name.trim().length >= 2) && "имя (2–32 символа)",
-    !(Number(draft.age) >= 18 && Number(draft.age) <= 99) && "возраст 18–99",
-    !draft.gender && "пол",
-    !draft.looking_for && "кого ищешь",
-  ].filter(Boolean) as string[];
-  const softMissing = [
-    !draft.city && "город",
-    !draft.neuro.length && "хотя бы одна особенность",
-    draft.neuro.length > 0 && !specialConsent && "согласие показывать особенности",
-  ].filter(Boolean) as string[];
-
-  async function save() {
-    if (!draft) return;
-    if (hardMissing.length) {
-      setError(`Заполни: ${hardMissing.join(", ")}.`);
-      return;
-    }
-    setSaving(true);
-    setError("");
-    const asDraft = softMissing.length > 0;
-    try {
-      const res = await endpoints.saveProfile({
-        name: draft.name.trim(),
-        age: Number(draft.age),
-        gender: draft.gender,
-        looking_for: draft.looking_for,
-        city: draft.city,
-        job: draft.job.trim(),
-        bio: draft.bio.trim(),
-        neuro: draft.neuro,
-        vibe: draft.vibe,
-        intents: draft.intents,
-        special_data_consent: specialConsent,
-        photo_rights_consent: photoConsent,
-        ...(asDraft ? { draft: true } : {}),
+    initialUser.current = user;
+  }, [user]);
+  useEffect(() => {
+    if (!initialUser.current) return;
+    let alive = true;
+    const key = `wiring.profile-draft.${initialUser.current.id}`;
+    const initial = profileDraft(initialUser.current);
+    void AsyncStorage.getItem(key)
+      .catch(() => null)
+      .then((raw) => {
+        if (!alive) return;
+        const restored = restoreDraft(raw, initial);
+        setDraft(restored);
+        const controller = createAutosave({
+          key,
+          initial: restored,
+          restored: !!raw,
+          storage: AsyncStorage,
+          save: (value, publish) =>
+            endpoints.saveProfile(profilePayload(value, publish)),
+          onSaved: (r) => setUser(r.user),
+          onState: setState,
+        });
+        saver.current = controller;
+        controller.start();
       });
-      setUser(res.user);
-      if (asDraft) {
-        Alert.alert("Сохранено как черновик", `Чтобы анкета появилась в ленте, добавь: ${softMissing.join(", ")}.`);
-      } else {
-        router.back();
-      }
-    } catch (e: any) {
-      setError(e.message);
+    return () => {
+      alive = false;
+      saver.current?.dispose();
+      saver.current = null;
+    };
+  }, [user?.id, setUser]);
+  const set = <K extends keyof Draft>(key: K, value: Draft[K]) => {
+    if (!draft) return;
+    const next = { ...draft, [key]: value };
+    setDraft(next);
+    saver.current?.update(next);
+  };
+  const run = async (fn: () => Promise<unknown>) => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await fn();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не получилось");
     } finally {
-      setSaving(false);
+      setBusy(false);
     }
-  }
-
-  const options = (items: { id: string; label?: string }[] | undefined, selected: (id: string) => boolean, onPick: (id: string) => void) => (
+  };
+  const photos = (user?.photos || []).filter(
+    (p): p is { id: number; url: string; is_primary?: boolean } =>
+      typeof p !== "string" && p.id !== undefined,
+  );
+  const upload = async () => {
+    if (!draft?.photo_rights_consent) {
+      setError("Сначала отметь галочку про свои фото.");
+      return;
+    }
+    await run(async () => {
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        quality: 0.9,
+      });
+      if (picked.canceled) return;
+      const a = picked.assets[0];
+      await endpoints.uploadPhoto(
+        a.uri,
+        a.mimeType || "image/jpeg",
+        a.fileName || "photo.jpg",
+      );
+      await refresh();
+    });
+  };
+  if (!user || !catalog || !draft)
+    return (
+      <Page title="Моя анкета" back={!embedded}>
+        <ErrorText>{error}</ErrorText>
+        <Loading />
+      </Page>
+    );
+  const choices = (
+    key: "neuro" | "vibe" | "intents",
+    items: { id: string; label?: string }[] = [],
+  ) => (
     <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-      {(items || []).map((i) => <Chip key={i.id} label={i.label || i.id} selected={selected(i.id)} onPress={() => onPick(i.id)} />)}
+      {items.map((i) => (
+        <Chip
+          key={i.id}
+          label={i.label || i.id}
+          selected={draft[key].includes(i.id)}
+          onPress={() => {
+            const next = draft[key].includes(i.id)
+              ? draft[key].filter((x) => x !== i.id)
+              : [...draft[key], i.id];
+            set(
+              key,
+              key === "neuro" ? applyNeuroToggle(draft[key], next) : next,
+            );
+          }}
+        />
+      ))}
     </View>
   );
-
+  const selects = (
+    key: "gender" | "looking_for",
+    items: { id: string; label?: string }[] = [],
+  ) => (
+    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+      {items.map((i) => (
+        <Chip
+          key={i.id}
+          label={i.label || i.id}
+          selected={draft[key] === i.id}
+          onPress={() => set(key, i.id)}
+        />
+      ))}
+    </View>
+  );
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: gutter, paddingTop: 16, paddingBottom: 40, width: "100%", maxWidth: 560, alignSelf: "center" }} keyboardShouldPersistTaps="handled">
-        <SectionTitle>Фото</SectionTitle>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-          {photos.map((p) => (
-            <View key={p.id} style={{ width: "31%", aspectRatio: 0.8, borderRadius: radius.md, overflow: "hidden", backgroundColor: t.chip }}>
-              <Image source={{ uri: mediaUrl(p.url) }} style={{ flex: 1 }} contentFit="cover" />
-              <Pressable accessibilityLabel="Удалить фото" onPress={() => removePhoto(p.id)} style={{ position: "absolute", top: 6, right: 6, width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="close" size={16} color="#fff" />
-              </Pressable>
-              <Pressable accessibilityLabel="Сделать главным" onPress={() => !p.is_primary && makePrimary(p.id)} style={{ position: "absolute", left: 6, bottom: 6, borderRadius: 10, backgroundColor: p.is_primary ? t.accent : "rgba(0,0,0,0.55)", paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{p.is_primary ? "главное" : "сделать главным"}</Text>
-              </Pressable>
-            </View>
-          ))}
-          {photos.length < maxPhotos && (
-            <Pressable accessibilityLabel="Добавить фото" onPress={addPhoto} style={{ width: "31%", aspectRatio: 0.8, borderRadius: radius.md, borderWidth: 2, borderStyle: "dashed", borderColor: t.accent, alignItems: "center", justifyContent: "center", backgroundColor: t.chip }}>
-              <Ionicons name={uploading ? "hourglass-outline" : "add"} size={30} color={t.accent} />
+    <Page title="Профиль" back={!embedded}>
+      <Title>Моя анкета</Title>
+      <Hint>Фото, немного о себе и то, как тебе комфортно общаться.</Hint>
+      <Hint>
+        {state.phase === "idle"
+          ? "Изменения сохраняются автоматически."
+          : state.phase === "saved"
+            ? "Изменения сохранены"
+            : state.phase === "saving"
+              ? "Сохраняем…"
+              : state.local
+                ? "Черновик сохранён на устройстве"
+                : "Черновик пока не сохранён на устройстве"}
+      </Hint>
+      {state.phase === "error" && (
+        <>
+          <ErrorText>{state.error}</ErrorText>
+          <Button
+            title="Повторить сохранение"
+            kind="ghost"
+            onPress={() => void saver.current?.save().catch(() => {})}
+          />
+        </>
+      )}
+      <SectionTitle>Фото</SectionTitle>
+      <Check
+        checked={draft.photo_rights_consent}
+        onChange={(v) => set("photo_rights_consent", v)}
+        label="Загружаю только свои фото и разрешаю показывать их участникам WIRING"
+      />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {photos.map((p) => (
+          <View
+            key={p.id}
+            style={{
+              width: "23%",
+              aspectRatio: 0.75,
+              borderRadius: 14,
+              overflow: "hidden",
+              borderWidth: p.is_primary ? 2 : 1,
+              borderColor: p.is_primary ? t.accent : t.border,
+            }}
+          >
+            <Pressable
+              style={{ flex: 1 }}
+              accessibilityLabel="Сделать аватаром"
+              onPress={() =>
+                void run(async () => {
+                  await endpoints.primaryPhoto(p.id);
+                  await refresh();
+                })
+              }
+            >
+              <Image
+                source={mediaSource(p)}
+                style={{ width: "100%", height: "100%" }}
+              />
             </Pressable>
-          )}
-        </View>
-        {!user.photo || user.needs_photo_consent ? (
-          <Card style={{ marginTop: 12 }}>
-            <Row icon="camera-outline" title="Загружаю только свои фото" right={<Toggle value={photoConsent} onValueChange={setPhotoConsent} />} />
-          </Card>
-        ) : null}
-
-        <SectionTitle>Основное</SectionTitle>
-        <Field label="Имя" icon="person-outline" value={draft.name} onChangeText={(v) => set("name", v)} maxLength={32} />
-        <Field label="Возраст (18+)" icon="calendar-outline" value={draft.age} onChangeText={(v) => set("age", v.replace(/\D/g, ""))} keyboardType="number-pad" maxLength={2} />
-        <Text style={{ color: t.muted, fontSize: 13, fontWeight: "600", marginBottom: 6 }}>Пол</Text>
-        {options(catalog.genders, (id) => draft.gender === id, (id) => set("gender", id))}
-        <Text style={{ color: t.muted, fontSize: 13, fontWeight: "600", marginVertical: 6 }}>Кого ищешь</Text>
-        {options(catalog.looking_for, (id) => draft.looking_for === id, (id) => set("looking_for", id))}
-        <Text style={{ color: t.muted, fontSize: 13, fontWeight: "600", marginVertical: 6 }}>Что ищешь</Text>
-        {options(catalog.intents, (id) => draft.intents.includes(id), (id) => set("intents", toggle(draft.intents, id)))}
-        <Card style={{ marginTop: 10, marginBottom: 10 }}>
-          <Row icon="location-outline" title="Город" subtitle={draft.city || "Выбрать из списка"} onPress={() => setCityOpen(true)} />
-        </Card>
-        <Field label="Чем занимаешься" icon="briefcase-outline" value={draft.job} onChangeText={(v) => set("job", v)} maxLength={60} />
-
-        <SectionTitle>О себе</SectionTitle>
-        <View style={{ backgroundColor: t.card, borderRadius: radius.md, borderWidth: 1, borderColor: t.border, padding: 12 }}>
-          <TextInput accessibilityLabel="О себе" value={draft.bio} onChangeText={(v) => set("bio", v)} multiline maxLength={catalog.limits?.bio ?? 1200} placeholder="Пара слов о себе и о том, как тебе комфортно общаться" placeholderTextColor={t.muted} style={{ color: t.text, fontSize: 16, minHeight: 110, textAlignVertical: "top" }} />
-          <Text style={{ color: t.muted, fontSize: 12, alignSelf: "flex-end" }}>{draft.bio.length}/{catalog.limits?.bio ?? 1200}</Text>
-        </View>
-
-        <SectionTitle>Особенности (минимум одна)</SectionTitle>
-        {options(catalog.neuro, (id) => draft.neuro.includes(id), (id) => set("neuro", toggle(draft.neuro, id)))}
-        <SectionTitle>Вайб</SectionTitle>
-        {options(catalog.vibe, (id) => draft.vibe.includes(id), (id) => set("vibe", toggle(draft.vibe, id)))}
-
-        <SectionTitle>Согласия</SectionTitle>
-        <Card>
-          <Row icon="medkit-outline" title="Показывать выбранные особенности" subtitle="Это данные о здоровье. Согласие можно отозвать в настройках на сайте." right={<Toggle value={specialConsent} onValueChange={setSpecialConsent} />} />
-        </Card>
-
-        <View style={{ height: 16 }} />
-        <ErrorText>{error}</ErrorText>
-        {(hardMissing.length > 0 || softMissing.length > 0) && (
-          <Card style={{ marginBottom: 12 }}>
-            <Text style={{ color: t.text, fontWeight: "700", marginBottom: 4 }}>
-              {hardMissing.length ? "Нужно заполнить, чтобы сохранить:" : "Сохранится как черновик. Для ленты добавь:"}
-            </Text>
-            <Text style={{ color: t.muted, lineHeight: 20 }}>{[...hardMissing, ...softMissing].join(" · ")}</Text>
-          </Card>
+            <Pressable
+              accessibilityLabel="Удалить фото"
+              onPress={() => setRemove(p.id)}
+              style={{
+                position: "absolute",
+                top: 5,
+                right: 5,
+                backgroundColor: "rgba(0,0,0,.7)",
+                borderRadius: 14,
+                padding: 6,
+              }}
+            >
+              <Text style={{ color: "white" }}>×</Text>
+            </Pressable>
+            {p.is_primary && (
+              <Text
+                style={{
+                  position: "absolute",
+                  bottom: 6,
+                  left: 6,
+                  color: t.accentText,
+                  backgroundColor: t.accent,
+                  padding: 3,
+                  fontSize: 10,
+                }}
+              >
+                аватар
+              </Text>
+            )}
+          </View>
+        ))}
+        {photos.length < (catalog.limits?.photos || 6) && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Добавить фото"
+            disabled={busy}
+            onPress={() => void upload()}
+            style={{
+              width: "23%",
+              aspectRatio: 0.75,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderStyle: "dashed",
+              borderColor: t.border,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: t.muted, fontSize: 30 }}>+</Text>
+          </Pressable>
         )}
-        <Button title={hardMissing.length ? "Сохранить" : softMissing.length ? "Сохранить черновик" : "Сохранить"} icon="checkmark" onPress={save} busy={saving} />
-      </ScrollView>
-      <CityPicker visible={cityOpen} places={catalog.places || []} onClose={() => setCityOpen(false)} onPick={(c) => { set("city", c); setCityOpen(false); }} />
-    </KeyboardAvoidingView>
+      </View>
+      <Hint>Нажми фото, чтобы выбрать аватар.</Hint>
+      <SectionTitle>Основное</SectionTitle>
+      <Field
+        label="Имя"
+        value={draft.name}
+        onChangeText={(v) => set("name", v)}
+        maxLength={32}
+      />
+      <Field
+        label="Возраст"
+        value={draft.age}
+        keyboardType="number-pad"
+        maxLength={2}
+        onChangeText={(v) => set("age", v)}
+      />
+      <SectionTitle>Пол</SectionTitle>
+      {selects("gender", catalog.genders)}
+      <SectionTitle>Кого ищешь</SectionTitle>
+      {selects("looking_for", catalog.looking_for)}
+      <Row
+        icon="location-outline"
+        title="Город"
+        subtitle={draft.city || "Не указывать"}
+        onPress={() => setCityOpen(true)}
+      />
+      <Field
+        label="Рост, см"
+        value={draft.height}
+        keyboardType="number-pad"
+        maxLength={3}
+        onChangeText={(v) => set("height", v)}
+      />
+      <Field
+        label="Занятие"
+        value={draft.job}
+        onChangeText={(v) => set("job", v)}
+        maxLength={120}
+      />
+      <SectionTitle>Что ищешь</SectionTitle>
+      {choices("intents", catalog.intents)}
+      <SectionTitle>О себе</SectionTitle>
+      <Field
+        label="О себе"
+        value={draft.bio}
+        onChangeText={(v) => set("bio", v)}
+        multiline
+        maxLength={catalog.limits?.bio || 1200}
+        style={{ minHeight: 100 }}
+      />
+      <Field
+        label="Как тебе писать"
+        value={draft.communication}
+        onChangeText={(v) => set("communication", v)}
+        multiline
+        maxLength={500}
+      />
+      <SectionTitle>Особенности</SectionTitle>
+      <Check
+        checked={draft.special_data_consent}
+        onChange={(v) => set("special_data_consent", v)}
+        label="Согласен(на) на обработку и показ выбранных особенностей"
+      />
+      {choices("neuro", catalog.neuro)}
+      <Hint>Диагнозы не проверяем: люди указывают их сами.</Hint>
+      <SectionTitle>Вайб</SectionTitle>
+      {choices("vibe", catalog.vibe)}
+      <SectionTitle>Промпты</SectionTitle>
+      {draft.prompts.map((p, i) => (
+        <View key={p.id}>
+          <Field
+            label={catalog.prompts?.find((x) => x.id === p.id)?.label || p.id}
+            value={p.answer}
+            multiline
+            maxLength={280}
+            onChangeText={(v) =>
+              set(
+                "prompts",
+                draft.prompts.map((x, j) =>
+                  j === i ? { ...x, answer: v } : x,
+                ),
+              )
+            }
+          />
+          <Button
+            title="Убрать промпт"
+            kind="ghost"
+            onPress={() =>
+              set(
+                "prompts",
+                draft.prompts.filter((_, j) => j !== i),
+              )
+            }
+          />
+        </View>
+      ))}
+      {draft.prompts.length < 3 && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+          {catalog.prompts
+            ?.filter((p) => !draft.prompts.some((x) => x.id === p.id))
+            .map((p) => (
+              <Chip
+                key={p.id}
+                label={p.label || p.id}
+                onPress={() =>
+                  set("prompts", [...draft.prompts, { id: p.id, answer: "" }])
+                }
+              />
+            ))}
+        </View>
+      )}
+      <SectionTitle>Для тебя</SectionTitle>
+      {user.jev_feed_unlocked ? (
+        <Row
+          icon="sparkles-outline"
+          title="Включить вкладку «Для тебя»"
+          right={
+            <Toggle
+              value={!!user.jev_feed_enabled}
+              disabled={busy}
+              onValueChange={(v) =>
+                void run(async () =>
+                  setUser((await endpoints.recommendationsEnabled(v)).user),
+                )
+              }
+            />
+          }
+        />
+      ) : (
+        <>
+          <Field
+            label="Промокод для рекомендаций"
+            value={code}
+            onChangeText={setCode}
+            autoCapitalize="characters"
+          />
+          <Button
+            title="Активировать"
+            disabled={!code.trim()}
+            busy={busy}
+            onPress={() =>
+              void run(async () => {
+                setUser((await endpoints.redeem(code.trim())).user);
+                setCode("");
+              })
+            }
+          />
+        </>
+      )}
+      <ErrorText>{error}</ErrorText>
+      <View style={{ gap: 10, marginTop: 20 }}>
+        <Button
+          title={user.needs_profile ? "Опубликовать анкету" : "Сохранить"}
+          busy={busy}
+          onPress={() =>
+            void run(async () => {
+              const result = await saver.current?.save(true);
+              if (user.needs_profile && result?.user)
+                router.replace(
+                  result.user.needs_onboard ? "/onboard" : "/(tabs)/feed",
+                );
+            })
+          }
+        />
+        <Button
+          title="Посмотреть анкету"
+          kind="ghost"
+          onPress={() => router.push(`/person/${user.id}`)}
+        />
+        <Button
+          title="Кому показывать мою анкету"
+          kind="ghost"
+          onPress={() => router.push("/visibility")}
+        />
+        <Button
+          title="WIRING+"
+          kind="ghost"
+          onPress={() => router.push("/plus")}
+        />
+        <Button
+          title="Удалить аккаунт"
+          kind="danger"
+          onPress={() => router.push("/delete-account")}
+        />
+      </View>
+      <CityPicker
+        visible={cityOpen}
+        allowAny
+        places={catalog.places || []}
+        onClose={() => setCityOpen(false)}
+        onPick={(v) => {
+          set("city", v);
+          setCityOpen(false);
+        }}
+      />
+      {remove !== null && (
+        <Confirm
+          title="Удалить фото?"
+          body="Фото исчезнет из анкеты."
+          label="Удалить"
+          busy={busy}
+          onClose={() => !busy && setRemove(null)}
+          onConfirm={() =>
+            void run(async () => {
+              await endpoints.deletePhoto(remove);
+              await refresh();
+              setRemove(null);
+            })
+          }
+        />
+      )}
+    </Page>
   );
 }
