@@ -20,7 +20,10 @@ export type TokenStore = {
   clear: () => Promise<void>;
 };
 
-export type Hooks = { onSessionLost?: () => void; onUpgradeRequired?: (minVersion: string) => void };
+export type Hooks = {
+  onSessionLost?: () => void;
+  onUpgradeRequired?: (minVersion: string) => void;
+};
 
 export type CoreOptions = {
   baseUrl: string;
@@ -38,7 +41,10 @@ async function parse(response: Response) {
   try {
     return raw ? JSON.parse(raw) : {};
   } catch {
-    const hint = response.status >= 500 ? "сервер временно недоступен" : "сервер вернул неожиданный ответ";
+    const hint =
+      response.status >= 500
+        ? "сервер временно недоступен"
+        : "сервер вернул неожиданный ответ";
     throw new ApiError(hint, {}, response.status);
   }
 }
@@ -55,12 +61,20 @@ export function createApi(opts: CoreOptions): Api {
     };
     const access = tokens.get("access");
     // Auth endpoints take credentials in the body; a stale bearer must not block a refresh.
-    if (access && !path.startsWith("/api/auth/")) headers.Authorization = `Bearer ${access}`;
-    const isForm = typeof FormData !== "undefined" && init.body instanceof FormData;
-    if (init.body && !isForm && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+    if (access && !path.startsWith("/api/auth/"))
+      headers.Authorization = `Bearer ${access}`;
+    const isForm =
+      typeof FormData !== "undefined" && init.body instanceof FormData;
+    if (init.body && !isForm && !headers["Content-Type"])
+      headers["Content-Type"] = "application/json";
     try {
-      return await fetchFn(`${baseUrl}${path}`, { ...init, headers });
-    } catch {
+      return await fetchFn(`${baseUrl}${path}`, {
+        ...init,
+        credentials: "omit",
+        headers,
+      });
+    } catch (error) {
+      if (init.signal?.aborted) throw error;
       throw new ApiError("нет соединения с сервером", {}, 0);
     }
   }
@@ -73,7 +87,10 @@ export function createApi(opts: CoreOptions): Api {
       const refresh = tokens.get("refresh");
       if (!refresh) return false;
       try {
-        const response = await send("/api/auth/refresh", { method: "POST", body: JSON.stringify({ refresh_token: refresh }) });
+        const response = await send("/api/auth/refresh", {
+          method: "POST",
+          body: JSON.stringify({ refresh_token: refresh }),
+        });
         const data = await parse(response);
         if (!response.ok || !data.access_token) return false;
         await tokens.set("access", data.access_token);
@@ -89,17 +106,31 @@ export function createApi(opts: CoreOptions): Api {
     return refreshing;
   }
 
-  async function api<T = any>(path: string, init: RequestInit = {}, retried = false): Promise<T> {
+  async function api<T = any>(
+    path: string,
+    init: RequestInit = {},
+    retried = false,
+  ): Promise<T> {
     const response = await send(path, init);
     const data = await parse(response);
-    if (response.status === 426 && data.upgrade) hooks.onUpgradeRequired?.(String(data.min_version || ""));
-    if (response.status === 401 && data.token_expired && !retried && !path.startsWith("/api/auth/")) {
+    if (response.status === 426 && data.upgrade)
+      hooks.onUpgradeRequired?.(String(data.min_version || ""));
+    if (
+      response.status === 401 &&
+      data.token_expired &&
+      !retried &&
+      !path.startsWith("/api/auth/")
+    ) {
       if (await refreshTokens()) return api<T>(path, init, true);
       await tokens.clear();
       hooks.onSessionLost?.();
     }
     if (!response.ok || data.ok === false) {
-      throw new ApiError(String(data.error || `ошибка ${response.status}`), data, response.status);
+      throw new ApiError(
+        String(data.error || `ошибка ${response.status}`),
+        data,
+        response.status,
+      );
     }
     return data as T;
   }

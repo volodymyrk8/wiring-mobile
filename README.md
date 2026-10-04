@@ -15,7 +15,9 @@ npm run typecheck
 Локальный бэкенд и тестовые аккаунты (`dev@wiring.test` / `wiring-dev`) описаны в README репозитория wiring.
 
 ## Что есть
-Вход и регистрация (токены в Keychain/Keystore, автообновление), лента со свайпом, лайки, чаты (история постранично, оптимистичная отправка с повтором без дублей, фото), профиль человека с жалобой и блокировкой, редактор анкеты с фото, настройки уведомлений и push, светлая и тёмная темы, экран «нужно обновление» по `426` от сервера.
+Нативные страницы и общие API-сценарии сайта: вертикальная лента с отдельными действиями, рекомендации, лайки с фильтрами/сортировкой, чаты с текстом/фото/голосовыми и reply/edit/delete/transcribe, полный редактор с автосохранением, архив, согласия, уведомления, WIRING+, поддержка и юридические документы. Пять тем и те же шрифты сайта.
+
+[Матрица соответствия и ограничения проверки](docs/web-parity.md). Новые auth-сценарии требуют серверного изменения `codex/native-parity-api`; визуальное совпадение всех экранов на iOS/Android пока не подтверждено.
 
 ## Push
 Клиент получает Expo push-токен и регистрирует его на `POST /api/push/device`. Нужен EAS-проект: `npx eas-cli init` (запишет `extra.eas.projectId` в `app.json`) и ключи APNs/FCM в аккаунте Expo. Без `projectId` переключатель push покажет понятное сообщение. Пока проверено только на сервере (моки). На симуляторе push не работает.
@@ -23,15 +25,14 @@ npm run typecheck
 ## Проверки
 ```sh
 npx tsc --noEmit && npx expo lint && npx expo-doctor
-npm test        # node --test: транспорт (bearer, refresh, 426, ошибки), 9 тестов
+npm test        # node --test: транспорт (bearer, refresh, 426, ошибки), 23 теста
 ```
 
 ## Сборка и релиз (EAS)
 `eas.json`: профиль `preview` (внутренний APK/IPA, API `http://192.168.2.101:5070`, cleartext включён) и `production` (AAB, `https://wiring.date`, cleartext выключен). `app.config.js` включает cleartext только при `WIRING_CLEARTEXT=1`. Перед первой сборкой: `npx eas-cli login`, `npx eas-cli init` (projectId), Apple Developer и Google Play аккаунты, ключи push.
 
-## Чего нет (следующие шаги)
-- SSE/WebSocket (сейчас опрос раз в 8 с), голосовые в чате, фильтры ленты, покупка WIRING+.
-- Тесты экранов (Maestro), Sentry (нужен DSN), EAS Build/Submit (нужны аккаунты).
+## Оставшаяся проверка
+Скриншоты всех страниц на обеих платформах, разрешения, клавиатура, VoiceOver/TalkBack, реальные OAuth/push и signed App Links. Локальная native-сборка остановилась из-за нехватки диска при установке CocoaPods/JDK. Приведённые ниже прошлые сборки не проверяют нынешние изменения. SSE/WebSocket и покупки отсутствуют и на текущем клиентском контракте сайта.
 
 ## Сборка iOS (проверено на Xcode 27, iPhone 17 Simulator)
 ```sh
@@ -72,4 +73,4 @@ cd android && echo "sdk.dir=$ANDROID_HOME" > local.properties && ./gradlew assem
 
 [Архитектура](docs/architecture.md) · [Навигация](docs/router.md) · [Материалы App Store](docs/app-store-ios.md) · [Сборка Android](docs/android-build.md).
 
-Сайт и приложения остаются одним продуктом: общие экраны, тексты и пять тем. Существующие задачи на синхронизацию описаны в [мобильном API](https://github.com/volodymyrk8/wiring/blob/main/docs/mobile-api.md) и [OAuth](https://github.com/volodymyrk8/wiring/blob/main/docs/social-login.md). Разделение репозиториев само по себе не реализует эти функции.
+Сайт и приложения остаются одним продуктом: общие экраны, тексты и пять тем. Контракт и серверные требования описаны в [мобильном API](https://github.com/volodymyrk8/wiring/blob/main/docs/mobile-api.md) и [OAuth](https://github.com/volodymyrk8/wiring/blob/main/docs/social-login.md). Текущее состояние переноса перечислено в [матрице соответствия](docs/web-parity.md).

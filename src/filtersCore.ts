@@ -1,6 +1,7 @@
 // Pure filter logic: no React Native imports, so it runs under `node --test`.
 /** Same fields as the web feed filters. */
 export type Filters = {
+  gender: string;
   neuro: string[];
   vibe: string[];
   intents: string[];
@@ -10,7 +11,16 @@ export type Filters = {
   hide_undiagnosed: boolean;
 };
 
-export const defaultFilters = (): Filters => ({ neuro: [], vibe: [], intents: [], min_age: 18, max_age: 99, city: "", hide_undiagnosed: true });
+export const defaultFilters = (): Filters => ({
+  gender: "",
+  neuro: [],
+  vibe: [],
+  intents: [],
+  min_age: 18,
+  max_age: 99,
+  city: "",
+  hide_undiagnosed: true,
+});
 
 const clampAge = (n: unknown, fallback: number) => {
   const v = Math.round(Number(n));
@@ -18,13 +28,17 @@ const clampAge = (n: unknown, fallback: number) => {
 };
 
 /** Defensive parse: stored or user-edited values never break the query. */
-export function normalizeFilters(raw: Partial<Filters> | null | undefined): Filters {
+export function normalizeFilters(
+  raw: Partial<Filters> | null | undefined,
+): Filters {
   const base = defaultFilters();
-  const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+  const list = (v: unknown) =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
   let min = clampAge(raw?.min_age, base.min_age);
   let max = clampAge(raw?.max_age, base.max_age);
   if (min > max) [min, max] = [max, min];
   return {
+    gender: typeof raw?.gender === "string" ? raw.gender : "",
     neuro: list(raw?.neuro),
     vibe: list(raw?.vibe),
     intents: list(raw?.intents),
@@ -39,6 +53,7 @@ export function normalizeFilters(raw: Partial<Filters> | null | undefined): Filt
 export function filtersQuery(f: Filters): string {
   const q: string[] = [];
   const add = (k: string, v: string) => q.push(`${k}=${encodeURIComponent(v)}`);
+  if (f.gender) add("gender", f.gender);
   if (f.neuro.length) add("neuro", f.neuro.join(","));
   if (f.vibe.length) add("vibe", f.vibe.join(","));
   if (f.intents.length) add("intent", f.intents.join(","));
@@ -53,6 +68,7 @@ export function filtersQuery(f: Filters): string {
 export function activeFilterCount(f: Filters): number {
   const d = defaultFilters();
   return (
+    (f.gender ? 1 : 0) +
     (f.neuro.length ? 1 : 0) +
     (f.vibe.length ? 1 : 0) +
     (f.intents.length ? 1 : 0) +
@@ -61,4 +77,3 @@ export function activeFilterCount(f: Filters): number {
     (f.hide_undiagnosed !== d.hide_undiagnosed ? 1 : 0)
   );
 }
-
