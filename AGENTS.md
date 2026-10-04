@@ -25,7 +25,7 @@ Run lint and typecheck before declaring any task done.
 
 ## Navigation & Routing
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
+- Use **Expo Router** for all navigation. Routes live in `app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `app/`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
 
@@ -39,3 +39,11 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## WIRING product boundaries
+
+Read README.md and docs/architecture.md before changes. This repository owns the shared iOS/Android application; the sibling wiring repository owns Flask, PostgreSQL, the website and the authoritative API contract at docs/mobile-api.md. Use that existing /api/* contract; do not add a second server or state store here.
+
+Website and mobile changes are one product task. Keep screens, copy and navigation aligned; when a counterpart checkout is unavailable, record the exact follow-up and API coverage. Themes are pastel (утро), mist (день), dusk (сумерки), night (ночь), slate (полночь), using website palettes. Do not introduce independent light/dark themes.
+
+Use local test accounts and local API endpoints for checks, never production accounts or destructive database commands. Native ios/ and android/ folders are generated and ignored. Preserve bundle identifier date.wiring.app, Android package date.wiring.app, signing settings and push configuration when moving files.

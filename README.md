@@ -1,11 +1,11 @@
 # WIRING Mobile
 
-Expo (React Native + TypeScript) клиент для существующего Flask API https://github.com/volodymyrk8/wiring. План: [../docs/mobile-plan.md](../docs/mobile-plan.md).
+Expo (React Native + TypeScript) клиент для существующего Flask API https://github.com/volodymyrk8/wiring. Сайт и backend: [volodymyrk8/wiring](https://github.com/volodymyrk8/wiring). Контракт API: [docs/mobile-api.md](https://github.com/volodymyrk8/wiring/blob/main/docs/mobile-api.md).
 
 ## Запуск
 
 ```sh
-npm install
+npm ci --legacy-peer-deps
 # сервер по умолчанию https://wiring.date; локально:
 EXPO_PUBLIC_API_URL=http://127.0.0.1:5070 npx expo start   # iOS simulator (dev-клиент цепляет любой Metro на 8081, лучше Release-сборка, см. ниже)
 EXPO_PUBLIC_API_URL=http://10.0.2.2:5070 npx expo start    # Android emulator
@@ -43,7 +43,7 @@ Release-сборка встраивает JS и не требует Metro. Debug
 Ошибка `osascript ... System Events` в конце `expo run:ios` безвредна: приложение уже установлено, запускать вручную командой выше.
 
 ## Известные ограничения по итогам запуска
-- Лента: если тестовый аккаунт уже лайкнул всех, покажется «Пока всё». Сброс на локальной БД: `DELETE FROM feed_history`.
+- Лента: если тестовый аккаунт уже лайкнул всех, покажется «Пока всё». Для проверки используйте другой локальный тестовый аккаунт; не очищайте таблицы базы.
 - Не проверялись: регистрация, жалоба и блокировка (кроме отрисовки), отправка сообщений, удаление аккаунта, тёмная тема, Dynamic Type/VoiceOver.
 
 ## Сборка Android (WSL, проверено)
@@ -62,3 +62,14 @@ cd android && echo "sdk.dir=$ANDROID_HOME" > local.properties && ./gradlew assem
 - `npm install` требует `--legacy-peer-deps` (конфликт peer-зависимостей react-dom).
 - Cleartext-трафик включается только `WIRING_CLEARTEXT=1` (нужен для API по http). Без переменной сборка безопасна для production.
 - APK подписан debug-ключом. Для Google Play нужен release keystore и AAB (`./gradlew bundleRelease`).
+
+## Репозитории и общая разработка
+
+- `wiring` — Flask, PostgreSQL, сайт и общий контракт `/api/*`.
+- `wiring-mobile` — один Expo/React Native проект для iOS и Android. Рабочая ветка — `main`; платформенные сборки и релизы независимы.
+
+Исходники из `wiring/mobile` теперь находятся в корне этого репозитория. История мобильного кода сохранена через `git subtree split` из `wiring` на коммите `a9f573a116169756d33387405c226787379546b2`; дерево `mobile/` Android-коммита `7dc70b2fbb586130f4814922737811e9947384bc` совпадало с ним. Старые ветки `mobile/ios` и `mobile/android` в `wiring` остаются историческими; новые изменения приложений делаем здесь.
+
+[Архитектура](docs/architecture.md) · [Навигация](docs/router.md) · [Материалы App Store](docs/app-store-ios.md) · [Сборка Android](docs/android-build.md).
+
+Сайт и приложения остаются одним продуктом: общие экраны, тексты и пять тем. Существующие задачи на синхронизацию описаны в [мобильном API](https://github.com/volodymyrk8/wiring/blob/main/docs/mobile-api.md) и [OAuth](https://github.com/volodymyrk8/wiring/blob/main/docs/social-login.md). Разделение репозиториев само по себе не реализует эти функции.
