@@ -1,6 +1,6 @@
 # Навигация мобильного приложения
 
-Точка входа — `expo-router/entry`; корневой layout — `app/_layout.tsx`. Все экраны React Native. Вкладки: feed, likes, chats, profile (редактор анкеты), for-you (при активном доступе и opt-in). Защита сессии в layout; незаполненная анкета из основных вкладок открывает редактор.
+Точка входа — `expo-router/entry`; корневой layout — `app/_layout.tsx`. Все экраны React Native. Вкладки: home, feed, likes, chats, profile (просмотр своей анкеты), for-you (при активном доступе и opt-in). Защита сессии в layout; незаполненная анкета из основных вкладок открывает редактор.
 
 Отдельные страницы: главная, login/register/forgot/reset/verify, onboard, person/[id], chat/[id], edit-profile, visibility, archive, consents, notifications, plus, invite, delete-account, support и юридические документы. Свой предпросмотр открывается в person/[id] и содержит переход в архив.
 
@@ -20,3 +20,5 @@
 `app.json` содержит iOS associated domain и Android intent filters для `wiring.date` и `wiring.club`. Нужны серверные ассоциации `/.well-known/apple-app-site-association` и `/.well-known/assetlinks.json`. API callback не должен перехватываться Universal Links. Подписание и проверка на устройстве описаны в [соответствии сайту](web-parity.md).
 
 Веб-URL Flask/Preact не изменяются; [контракт сайта](https://github.com/volodymyrk8/wiring/blob/main/docs/router.md) остаётся источником.
+
+Нижняя навигация сайта воспроизведена в `src/ui/ProductNav.tsx`: главная, лента, лайки, чаты и своя анкета, с дополнительной вкладкой рекомендаций при доступе. Она доступна и на отдельных страницах; редактор открывается из своей анкеты или по `/me`.

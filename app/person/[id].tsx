@@ -87,7 +87,7 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
                   onPress={() => router.push("/edit-profile")}
                 />
                 <Button
-                  title="Лайки, дизлайки и блок"
+                  title="Лайки и дизлайки"
                   kind="ghost"
                   onPress={() => router.push("/archive")}
                 />
@@ -162,7 +162,7 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
           onConfirm={() => void action(confirm)}
           onClose={() => !busy && setConfirm(null)}
         />
-      )}{" "}
+      )}
       {reportOpen && (
         <Modal
           title="Пожаловаться"

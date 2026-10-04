@@ -93,7 +93,13 @@ export default function ChatScreen() {
         sequence.current++;
         clearInterval(interval);
         sub.remove();
-        if (recorder.isRecording) void recorder.stop();
+        // The audio hook can release its native object before focus cleanup
+        // runs on unmount. A disposed recorder must not crash navigation.
+        try {
+          if (recorder.isRecording) void recorder.stop().catch(() => undefined);
+        } catch {
+          // The hook has already disposed the recorder and its recording.
+        }
         void setAudioModeAsync({ allowsRecording: false });
       };
     }, [poll, recorder]),
@@ -352,7 +358,7 @@ export default function ChatScreen() {
                       />
                     </Pressable>
                   )}
-                  {item.audio_url && <Voice message={item} />}{" "}
+                  {item.audio_url && <Voice message={item} />}
                   {!!item.body && (
                     <Text
                       style={{ color: t.text, fontSize: 15, lineHeight: 21 }}
@@ -552,7 +558,7 @@ export default function ChatScreen() {
           onConfirm={() => void mutate("delete")}
           onClose={() => !busy && setDeleting(null)}
         />
-      )}{" "}
+      )}
       {photo && (
         <Modal title="Фото" onClose={() => setPhoto(null)}>
           <Image

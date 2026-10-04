@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../../src/auth";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import {
@@ -5,13 +7,14 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  TextInput,
   View,
 } from "react-native";
 import { endpoints } from "../../src/api/client";
 import type { Match } from "../../src/api/types";
 import { removeFromFeeds } from "../../src/features/feed/store";
 import { useTheme } from "../../src/theme";
-import { Avatar, Button, Empty, ErrorText, Loading } from "../../src/ui/kit";
+import { Avatar, Empty, ErrorText, Loading } from "../../src/ui/kit";
 import { Column } from "../../src/ui/layout";
 import { Confirm, Header } from "../../src/ui/Page";
 import { Text, fonts } from "../../src/ui/Typography";
@@ -25,6 +28,8 @@ const when = (ts?: number) => {
 export default function Chats() {
   const t = useTheme();
   const router = useRouter();
+  const { user } = useAuth();
+  const [search, setSearch] = useState("");
   const [matches, setMatches] = useState<Match[] | null>(null);
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -80,17 +85,10 @@ export default function Chats() {
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <Header title="Чаты" />
       <Column>
-        <Text
-          style={{
-            color: t.text,
-            fontFamily: fonts.serif,
-            fontSize: 32,
-            paddingHorizontal: 16,
-            marginVertical: 12,
-          }}
-        >
-          Чаты
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginHorizontal: 16, marginVertical: 12, borderRadius: 16, backgroundColor: t.card, paddingHorizontal: 14 }}>
+          <Ionicons name="search-outline" size={18} color={t.muted} />
+          <TextInput accessibilityLabel="Найти диалог" placeholder="найти диалог" placeholderTextColor={t.muted} value={search} onChangeText={setSearch} style={{ flex: 1, paddingVertical: 13, color: t.text, fontFamily: fonts.body, fontSize: 14 }} />
+        </View>
         <ErrorText>{error}</ErrorText>
         {!matches ? (
           <Loading />
@@ -101,7 +99,7 @@ export default function Chats() {
           />
         ) : (
           <FlatList
-            data={matches}
+            data={matches.filter(m => m.name.toLocaleLowerCase("ru").includes(search.toLocaleLowerCase("ru")))}
             keyExtractor={(m) => String(m.id)}
             refreshControl={
               <RefreshControl
@@ -117,11 +115,7 @@ export default function Chats() {
             renderItem={({ item }) => (
               <View
                 style={{
-                  borderWidth: 1,
-                  borderColor: t.border,
-                  borderRadius: 18,
-                  backgroundColor: t.card,
-                  marginBottom: 12,
+                  marginBottom: 6,
                   overflow: "hidden",
                 }}
               >
@@ -129,7 +123,8 @@ export default function Chats() {
                   onPress={() => router.push(`/chat/${item.id}`)}
                   style={{
                     flexDirection: "row",
-                    padding: 14,
+                    paddingHorizontal: 8,
+                    paddingVertical: 10,
                     gap: 12,
                     alignItems: "center",
                   }}
@@ -139,8 +134,9 @@ export default function Chats() {
                     name={item.name}
                     size={52}
                     online={item.online}
+                    radius={14}
                   />
-                  <View style={{ flex: 1, gap: 5 }}>
+                  <View style={{ flex: 1, gap: 5, paddingRight: 22 }}>
                     <View
                       style={{
                         flexDirection: "row",
@@ -150,11 +146,11 @@ export default function Chats() {
                       <Text
                         style={{
                           color: t.text,
-                          fontFamily: fonts.serif,
-                          fontSize: 21,
+                          fontFamily: fonts.bold,
+                          fontSize: 15,
                         }}
                       >
-                        {item.name}
+                        {item.name}{item.age ? `, ${item.age}` : ""}
                       </Text>
                       <Text style={{ color: t.muted, fontSize: 11 }}>
                         {when(item.last_at)}
@@ -167,7 +163,7 @@ export default function Chats() {
                         fontSize: 13,
                       }}
                     >
-                      {item.last_message || "Напиши первым"}
+                      {item.last_from_id === user?.id ? "ты: " : ""}{item.last_message || "Напиши первым"}
                     </Text>
                   </View>
                   {!!item.unread && (
@@ -184,20 +180,7 @@ export default function Chats() {
                     </Text>
                   )}
                 </Pressable>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "flex-end",
-                    paddingHorizontal: 10,
-                    paddingBottom: 8,
-                  }}
-                >
-                  <Button
-                    title="Убрать из чатов"
-                    kind="ghost"
-                    onPress={() => setRemove(item)}
-                  />
-                </View>
+                <Pressable accessibilityRole="button" accessibilityLabel="Убрать чат" onPress={() => setRemove(item)} hitSlop={8} style={{ position: "absolute", top: 34, right: 0, padding: 5 }}><Ionicons name="close-outline" size={16} color={t.muted} /></Pressable>
               </View>
             )}
           />

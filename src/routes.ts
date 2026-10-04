@@ -13,6 +13,9 @@ export function nativeRoute(path: string): string {
       url.protocol === "wiring:"
         ? `/${url.hostname}${url.pathname}`
         : url.pathname;
+    // Expo Go uses /--/ to separate its development origin from the app path.
+    if (url.protocol === "exp:" && ["localhost", "127.0.0.1"].includes(url.hostname))
+      pathname = pathname.replace(/^\/--(?=\/)/, "");
     if (url.searchParams.has("verify")) {
       pathname = "/verify";
       url.searchParams.set("token", url.searchParams.get("verify")!);
@@ -27,6 +30,7 @@ export function nativeRoute(path: string): string {
       "/sign-in": "/login",
       "/sign-up": "/register",
       "/me": "/edit-profile",
+      "/home": "/(tabs)/home",
       "/feed": "/(tabs)/feed",
       "/likes": "/(tabs)/likes",
       "/chats": "/(tabs)/chats",
@@ -45,7 +49,7 @@ export function nativeRoute(path: string): string {
       url.searchParams.set("ref", decodeURIComponent(ref[1]));
     }
     const safe =
-      /^\/(?:$|\(tabs\)\/(?:feed|likes|chats|profile|for-you)$|(?:person|chat)\/\d+$|login$|register$|forgot$|reset$|verify$|onboard$|archive$|consents$|notifications$|plus$|invite$|marketing$|glossary$|support$|rules$|privacy$|child-safety$|account-deletion$|edit-profile$|visibility$|delete-account$|oauth$)/;
+      /^\/(?:$|\(tabs\)\/(?:home|feed|likes|chats|profile|for-you)$|(?:person|chat)\/\d+$|login$|register$|forgot$|reset$|verify$|onboard$|archive$|consents$|notifications$|plus$|invite$|marketing$|glossary$|support$|rules$|privacy$|child-safety$|account-deletion$|edit-profile$|visibility$|delete-account$|oauth$)/;
     if (!safe.test(pathname)) return "/";
     return pathname + (url.search ? url.search : "");
   } catch {

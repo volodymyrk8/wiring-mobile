@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ScrollView, Pressable, View } from "react-native";
 import type { Person } from "../../api/types";
 import { mediaSource } from "../../api/client";
-import { useTagLabel } from "../../catalog";
+import { useCatalog, useTagLabel } from "../../catalog";
 import { useAuth } from "../../auth";
 import { useTheme } from "../../theme";
 import { Text, fonts } from "../../ui/Typography";
@@ -20,6 +20,11 @@ export function ProfileCard({
   const t = useTheme();
   const { user } = useAuth();
   const label = useTagLabel();
+  const catalog = useCatalog();
+  const gender = catalog?.genders?.find(i => i.id === person.gender)?.label;
+  const looking = catalog?.looking_for?.find(i => i.id === person.looking_for)?.label;
+  const intents = (person.intents?.length ? person.intents : person.intent ? [person.intent] : []).map(label);
+  const open = person.gender === "woman" ? "открыта" : person.gender === "man" ? "открыт" : "открыто";
   const [aspect, setAspect] = useState(0.75);
   const [page, setPage] = useState(0);
   const photos = person.photos?.length
@@ -64,7 +69,7 @@ export function ProfileCard({
           />
         ))}
       </ScrollView>
-      <View
+      {photos.length > 1 && <View
         pointerEvents="none"
         style={{
           position: "absolute",
@@ -86,7 +91,7 @@ export function ProfileCard({
             }}
           />
         ))}
-      </View>
+      </View>}
       <LinearGradient
         pointerEvents="none"
         colors={["transparent", "rgba(17,14,12,.78)", "rgba(17,14,12,.94)"]}
@@ -116,10 +121,12 @@ export function ProfileCard({
             person.city,
             person.job,
             person.height ? `${person.height} см` : "",
-            person.intents?.map(label).join(", "),
+            !["hidden", "other", "nb"].includes(person.gender || "hidden") ? gender : "",
           ]
             .filter(Boolean)
             .join(" · ")}
+          {"\n"}
+          {[looking ? `ищет ${looking}` : "", intents.length ? `${open} к: ${intents.join(", ")}` : ""].filter(Boolean).join(" · ")}
         </Text>
         {!!person.bio && (
           <Text
@@ -135,7 +142,7 @@ export function ProfileCard({
           </Text>
         )}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-          {[...(person.neuro || []), ...(person.vibe || [])].map((id) => {
+          {(person.neuro || []).filter(id => catalog?.neuro?.some(tag => tag.id === id)).slice(0, 2).map((id) => {
             const shared =
               user?.neuro?.includes(id) || user?.vibe?.includes(id);
             return (

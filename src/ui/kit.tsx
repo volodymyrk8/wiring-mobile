@@ -297,11 +297,13 @@ export function Avatar({
   uri,
   name,
   size = 52,
+  radius = size / 2,
   online,
 }: {
   uri?: string;
   name?: string;
   size?: number;
+  radius?: number;
   online?: boolean;
 }) {
   const t = useTheme();
@@ -313,7 +315,7 @@ export function Avatar({
           style={{
             width: size,
             height: size,
-            borderRadius: size / 2,
+            borderRadius: radius,
             backgroundColor: t.chip,
           }}
         />

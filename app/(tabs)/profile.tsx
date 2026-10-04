@@ -1,4 +1,4 @@
-import EditProfile from "../edit-profile";
+import PersonScreen from "../person/[id]";
 export default function Profile() {
-  return <EditProfile embedded />;
+  return <PersonScreen own />;
 }

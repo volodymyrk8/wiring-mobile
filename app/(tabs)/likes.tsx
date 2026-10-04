@@ -257,7 +257,7 @@ export default function Likes() {
           }}
           onClose={() => setFiltersOpen(false)}
         />
-      )}{" "}
+      )}
       {sortOpen && (
         <Modal title="Сортировка лайков" onClose={() => setSortOpen(false)}>
           <View style={{ flexDirection: "row", flexWrap: "wrap" }}>

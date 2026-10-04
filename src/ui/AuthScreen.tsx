@@ -171,7 +171,7 @@ export function AuthScreen({
                   mode === "login" ? "current-password" : "new-password"
                 }
               />
-            )}{" "}
+            )}
             {mode === "register" && (
               <>
                 <Check

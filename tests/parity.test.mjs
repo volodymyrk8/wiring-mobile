@@ -20,3 +20,9 @@ test("failed autosave keeps local recovery and retry succeeds",async()=>{const d
 test("reopening a profile serializes writes behind its previous request",async()=>{const disk=storage(),old=deferred(),order=[];const opts={key:"profile-3",initial:{name:"old"},restored:true,storage:disk,delay:100000,onSaved:()=>{},onState:()=>{}};const first=createAutosave({...opts,save:async v=>{order.push(v.name);return old.promise;}});const one=first.save();await tick();first.dispose();const second=createAutosave({...opts,initial:{name:"new"},save:async v=>{order.push(v.name);return v;}});const two=second.save(true);await tick();assert.deepEqual(order,["old"]);old.resolve({name:"old"});await Promise.all([one,two]);assert.deepEqual(order,["old","new"]);second.dispose();});
 
 test("a delayed feed page cannot resurrect a profile after like/hide",()=>{const state=removePerson(initialFeed(),7);const late=appendFeed(state,{cards:[{id:7},{id:8},{id:8}],has_more:false});assert.deepEqual(late.cards.map(c=>c.id),[8]);});
+
+test("local Expo Go paths use the same native route contract", () => {
+  assert.equal(nativeRoute("exp://127.0.0.1:8091/--/chats/9"), "/chat/9");
+  assert.equal(nativeRoute("exp://127.0.0.1:8091/--/home"), "/(tabs)/home");
+  assert.equal(nativeRoute("exp://outside.example/--/chats/9"), "/");
+});

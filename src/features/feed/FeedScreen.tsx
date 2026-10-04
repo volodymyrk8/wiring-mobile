@@ -185,6 +185,7 @@ export function FeedScreen({
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <Header
+        compact={!recommendations}
         title={recommendations ? "Для тебя" : "Лента"}
         right={
           !recommendations ? (
@@ -292,11 +293,11 @@ export function FeedScreen({
           />
         ) : (
           <Empty
-            title={loading ? "Загружаем…" : "Пока всё"}
+            title={loading ? "Ищем новые анкеты…" : "Новых анкет пока нет"}
             text={
               recommendations
                 ? "Подходящих анкет сейчас нет. Обнови подбор позже."
-                : "Новые анкеты появятся здесь. Можно изменить фильтры или проверить позже."
+                : "Загляни позже."
             }
             action={
               <View style={{ gap: 10 }}>
@@ -309,7 +310,7 @@ export function FeedScreen({
                 {!recommendations && (
                   <>
                     <Button
-                      title="Показать анкеты ещё раз · WIRING+"
+                      title="Показать анкеты ещё раз"
                       disabled={!user?.plus || loading}
                       onPress={() => setConfirm("reset")}
                     />
@@ -363,7 +364,7 @@ export function FeedScreen({
           }}
           onClose={() => setFiltersOpen(false)}
         />
-      )}{" "}
+      )}
       {confirm && (
         <Confirm
           title={
@@ -372,7 +373,7 @@ export function FeedScreen({
           body={
             confirm === "pass"
               ? "Анкета больше не появится в ленте. Вернуть её можно в архиве своих решений."
-              : "Доступные анкеты появятся снова. Лайки, блокировки и постоянные исключения сохранятся."
+              : "Ранее показанные анкеты снова появятся в ленте. Исключённые анкеты не вернутся; лайки и чаты сохранятся."
           }
           label={confirm === "pass" ? "Скрыть" : "Показать ещё раз"}
           busy={busy}

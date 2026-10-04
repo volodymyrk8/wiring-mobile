@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
+import { ProductNav } from "./ProductNav";
 import { useState, type ReactNode } from "react";
 import {
   KeyboardAvoidingView,
@@ -120,10 +121,12 @@ export function Header({
   title,
   right,
   back = false,
+  compact = false,
 }: {
   title?: string;
   right?: ReactNode;
   back?: boolean;
+  compact?: boolean;
 }) {
   const t = useTheme();
   const { user, logout } = useAuth();
@@ -153,7 +156,7 @@ export function Header({
           minHeight: 44,
         }}
       >
-        {back && (
+        {!compact && back && (
           <Pressable
             accessibilityLabel="Назад"
             accessibilityRole="button"
@@ -165,30 +168,22 @@ export function Header({
             <Ionicons name="arrow-back" size={22} color={t.text} />
           </Pressable>
         )}
-        <Pressable
+        {!compact && <Pressable
           accessibilityLabel="WIRING — главная"
           onPress={() => router.push("/")}
           style={{ flex: 1 }}
         >
-          <Text
-            style={{
-              fontFamily: fonts.serifBold,
-              fontSize: 23,
-              color: t.text,
-              letterSpacing: 0.3,
-            }}
-          >
-            WIRING<Text style={{ fontSize: 10, color: t.muted }}> beta</Text>
-          </Text>
-          {title && (
-            <Text style={{ color: t.muted, fontSize: 12 }}>{title}</Text>
-          )}
-        </Pressable>
-        {right}
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+            <Text style={{ fontFamily: fonts.brand, fontSize: 23, color: t.text, letterSpacing: 0.3 }}>WIRING{!title && <Text style={{ fontSize: 10, color: t.muted }}> beta</Text>}</Text>
+            {!!title && <Text style={{ color: t.text, fontFamily: fonts.serif, fontSize: 13 }}>/ {title.toLowerCase()}</Text>}
+          </View>
+        </Pressable>}
+        {!compact && right}
         <Pressable
           accessibilityLabel={`Тема: ${THEME_LIST.find((i) => i.id === prefs.theme)?.label}`}
           onPress={() => setThemeMenu(true)}
           style={{
+            marginRight: compact ? "auto" : undefined,
             height: 40,
             width: 40,
             borderRadius: 20,
@@ -199,14 +194,15 @@ export function Header({
             justifyContent: "center",
           }}
         >
-          <Ionicons name="color-palette-outline" size={20} color={t.accent} />
+          <Ionicons name={t.isDark ? "moon-outline" : "sunny-outline"} size={20} color={t.text} />
         </Pressable>
-        <Pressable
+        {compact && right}
+        {!compact && <Pressable
           accessibilityLabel={user ? "Меню профиля" : "Войти"}
           onPress={() => (user ? setMenu(true) : router.push("/login"))}
         >
           <Avatar uri={user?.photo} name={user?.name} size={40} />
-        </Pressable>
+        </Pressable>}
       </View>
       {themeMenu && (
         <Modal title="Оформление" onClose={() => setThemeMenu(false)}>
@@ -296,12 +292,14 @@ export function LegalFooter() {
         marginTop: 18,
       }}
     >
+      <Text style={{ fontSize: 12, color: t.muted }}>18+</Text>
       {[
-        ["Правила", "/rules"],
-        ["Конфиденциальность", "/privacy"],
-        ["Поддержка", "/support"],
+        ["соглашение", "/rules"],
+        ["конфиденциальность", "/privacy"],
+        ["рассылка", "/marketing"],
         ["Защита детей", "/child-safety"],
         ["Удаление аккаунта и данных", "/account-deletion"],
+        ["поддержка", "/support"],
       ].map(([label, path]) => (
         <Pressable
           key={path}
@@ -327,6 +325,7 @@ export function Page({
 }) {
   const t = useTheme();
   const inset = useSafeAreaInsets();
+  const segments = useSegments();
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: t.bg }}
@@ -346,6 +345,7 @@ export function Page({
         {children}
         {footer && <LegalFooter />}
       </ScrollView>
+      {segments[0] !== "(tabs)" && <ProductNav />}
     </KeyboardAvoidingView>
   );
 }
