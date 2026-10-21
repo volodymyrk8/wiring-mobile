@@ -29,7 +29,8 @@ export function nativeRoute(path: string): string {
     const alias: Record<string, string> = {
       "/sign-in": "/login",
       "/sign-up": "/register",
-      "/me": "/edit-profile",
+      "/me": "/(tabs)/profile",
+      "/me/edit": "/edit-profile",
       "/home": "/(tabs)/home",
       "/feed": "/(tabs)/feed",
       "/likes": "/(tabs)/likes",
