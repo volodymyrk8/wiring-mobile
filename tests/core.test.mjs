@@ -8,7 +8,7 @@ function harness(handler, { access = "old-access", refresh = "old-refresh" } = {
   const events = { lost: 0, upgrade: [] };
   const fetchFn = async (url, init) => {
     const path = url.replace("https://x.test", "");
-    calls.push({ path, headers: init.headers, body: init.body });
+    calls.push({ path, headers: init.headers, body: init.body, credentials:init.credentials });
     return handler(path, init, calls);
   };
   const api = createApi({
@@ -33,6 +33,8 @@ test("sends version headers and a bearer token, but no bearer on auth endpoints"
   await api("/api/feed");
   await api("/api/auth/logout", { method: "POST", body: "{}" });
   assert.equal(calls[0].headers.Authorization, "Bearer old-access");
+  assert.equal(calls[0].credentials,"omit");
+  assert.equal(calls[1].credentials,"omit");
   assert.equal(calls[0].headers["X-App-Version"], "1.2.3");
   assert.equal(calls[0].headers["X-App-Platform"], "ios");
   assert.equal(calls[1].headers.Authorization, undefined);

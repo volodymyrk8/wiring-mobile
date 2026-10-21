@@ -1,9 +1,18 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { clearFeeds } from "./features/feed/store";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { endpoints, setApiHooks } from "./api/client";
 import { clearSession, getToken, loadTokens, setToken } from "./api/tokens";
-import type { Me } from "./api/types";
+import type { Me, Session } from "./api/types";
 import { loadFilters } from "./filters";
-import { loadPrefs } from "./prefs";
+import { loadPrefs, syncAccountTheme } from "./prefs";
 import { unregisterPush } from "./push";
 
 type AuthState = {
@@ -11,7 +20,13 @@ type AuthState = {
   loading: boolean;
   upgradeRequired: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    ref?: string,
+  ) => Promise<{ needsEmailVerify: boolean; email: string }>;
+  acceptSession: (session: Session) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   setUser: (user: Me) => void;
@@ -21,6 +36,9 @@ const Ctx = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Me | null>(null);
+  const userId = user?.id;
+  const userTheme = user?.theme;
+  useEffect(() => { syncAccountTheme(userId ? { id: userId, theme: userTheme } : null); }, [userId, userTheme]);
   const [loading, setLoading] = useState(true);
   const [upgradeRequired, setUpgradeRequired] = useState<string | null>(null);
 
@@ -34,7 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setApiHooks({
-      onSessionLost: () => setUser(null),
+      onSessionLost: () => {
+        clearFeeds();
+        setUser(null);
+      },
       onUpgradeRequired: (min) => setUpgradeRequired(min || "новой версии"),
     });
     (async () => {
@@ -44,17 +65,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, [refresh]);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const res = await endpoints.token(email.trim(), password);
+  const acceptSession = useCallback(async (res: Session) => {
+    clearFeeds();
     await setToken("access", res.access_token);
     await setToken("refresh", res.refresh_token);
     setUser(res.user);
   }, []);
 
+  const signIn = useCallback(
+    async (email: string, password: string) =>
+      acceptSession(await endpoints.token(email.trim(), password)),
+    [acceptSession],
+  );
+
   // Profile/notification PATCH responses omit inbox counters; keep the last known ones so the
   // tab badges do not blink to zero until the next /api/me refresh.
   const mergeUser = useCallback((next: Me) => {
-    setUser((prev) => ({ ...next, unread: next.unread ?? prev?.unread, likes_in: next.likes_in ?? prev?.likes_in }));
+    setUser((prev) => ({
+      ...next,
+      unread: next.unread ?? prev?.unread,
+      unread_chats: next.unread_chats ?? prev?.unread_chats,
+      likes_in: next.likes_in ?? prev?.likes_in,
+    }));
   }, []);
 
   const value = useMemo<AuthState>(
@@ -65,9 +97,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refresh,
       setUser: mergeUser,
       login: signIn,
-      register: async (name, email, password) => {
-        await endpoints.register({ name: name.trim(), email: email.trim(), password });
-        await signIn(email, password);
+      acceptSession,
+      register: async (name, email, password, ref) => {
+        const res = await endpoints.register({
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          ref,
+        });
+        if (!res.needs_email_verify) await signIn(email, password);
+        return {
+          needsEmailVerify: !!res.needs_email_verify,
+          email: res.email || email.trim(),
+        };
       },
       logout: async () => {
         const refreshToken = getToken("refresh");
@@ -78,10 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Tokens are dropped locally either way.
         }
         await clearSession();
+        clearFeeds();
         setUser(null);
       },
     }),
-    [user, loading, upgradeRequired, refresh, signIn, mergeUser],
+    [user, loading, upgradeRequired, refresh, signIn, mergeUser, acceptSession],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

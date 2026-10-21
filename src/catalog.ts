@@ -11,7 +11,8 @@ function load(): Promise<void> {
     .then((c) => {
       labels = {};
       for (const list of [c.neuro, c.vibe, c.intents]) {
-        for (const item of list || []) labels[item.id] = item.label || item.name || item.id;
+        for (const item of list || [])
+          labels[item.id] = item.label || item.name || item.id;
       }
     })
     .catch(() => {
@@ -24,7 +25,14 @@ function load(): Promise<void> {
 export function useTagLabel(): (id: string) => string {
   const [, bump] = useState(0);
   useEffect(() => {
-    if (!labels) load().then(() => bump((n) => n + 1));
+    let active = true;
+    if (!labels)
+      load().then(() => {
+        if (active) bump((n) => n + 1);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
   return (id) => labels?.[id] || id;
 }
@@ -37,10 +45,13 @@ export function useCatalog(): Catalog | null {
   const [catalog, setCatalog] = useState<Catalog | null>(full);
   useEffect(() => {
     if (full) return;
-    fullPending ??= endpoints.catalog().then((c) => (full = c)).catch(() => {
-      fullPending = null;
-      return null;
-    });
+    fullPending ??= endpoints
+      .catalog()
+      .then((c) => (full = c))
+      .catch(() => {
+        fullPending = null;
+        return null;
+      });
     let alive = true;
     fullPending.then((c) => alive && c && setCatalog(c));
     return () => {

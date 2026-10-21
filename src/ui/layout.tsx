@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
-import { Platform, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /** Widest comfortable column for phone-style UI on tablets, foldables and landscape. */
-export const MAX_CONTENT_WIDTH = 560;
+export const MAX_CONTENT_WIDTH = 540;
 
 export function useLayout() {
   const { width, height } = useWindowDimensions();
@@ -21,12 +28,23 @@ export function useLayout() {
 }
 
 /** Centres content in a readable column on wide screens; a no-op on phones. */
-export function Column({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+export function Column({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
   return <View style={[s.column, style]}>{children}</View>;
 }
 
 const s = StyleSheet.create({
-  column: { flex: 1, width: "100%", maxWidth: MAX_CONTENT_WIDTH, alignSelf: "center" },
+  column: {
+    flex: 1,
+    width: "100%",
+    maxWidth: MAX_CONTENT_WIDTH,
+    alignSelf: "center",
+  },
 });
 
 /**
@@ -35,7 +53,7 @@ const s = StyleSheet.create({
  */
 export function useTabBarInset(): number {
   const insets = useSafeAreaInsets();
-  return Platform.OS === "ios" ? insets.bottom + 62 : 0;
+  return insets.bottom + 66;
 }
 
 /**
@@ -47,6 +65,7 @@ export function useTabBarInset(): number {
 export function useGutter(): number {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const base = width > MAX_CONTENT_WIDTH + 80 ? 24 : Platform.OS === "android" ? 20 : 16;
+  const base =
+    width > MAX_CONTENT_WIDTH + 80 ? 24 : Platform.OS === "android" ? 20 : 16;
   return base + Math.max(insets.left, insets.right);
 }
