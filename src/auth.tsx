@@ -1,3 +1,4 @@
+import { AppState } from "react-native";
 import { clearFeeds } from "./features/feed/store";
 import {
   createContext,
@@ -6,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import { endpoints, setApiHooks } from "./api/client";
@@ -42,9 +44,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [upgradeRequired, setUpgradeRequired] = useState<string | null>(null);
 
+  const sessionEpoch = useRef(0);
   const refresh = useCallback(async () => {
+    const epoch = sessionEpoch.current;
     try {
-      setUser((await endpoints.me()).user);
+      const next = (await endpoints.me()).user;
+      if (sessionEpoch.current === epoch) setUser(next);
     } catch {
       // Network errors keep the current user; a lost session is handled by the api hook.
     }
@@ -53,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setApiHooks({
       onSessionLost: () => {
+        sessionEpoch.current++;
         clearFeeds();
         setUser(null);
       },
@@ -65,7 +71,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, [refresh]);
 
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active" && (getToken("access") || getToken("refresh"))) void refresh();
+    });
+    return () => sub.remove();
+  }, [refresh]);
+
   const acceptSession = useCallback(async (res: Session) => {
+    sessionEpoch.current++;
     clearFeeds();
     await setToken("access", res.access_token);
     await setToken("refresh", res.refresh_token);
@@ -112,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       },
       logout: async () => {
+        sessionEpoch.current++;
         const refreshToken = getToken("refresh");
         const push = await unregisterPush().catch(() => null);
         try {
