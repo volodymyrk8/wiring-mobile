@@ -2,10 +2,11 @@
 // (WIRING_CLEARTEXT=1, used by the `preview` EAS profile for a LAN test server).
 module.exports = ({ config }) => {
   const cleartext = process.env.WIRING_CLEARTEXT === "1";
+  const configuredApi = process.env.EXPO_PUBLIC_API_URL || (config.extra && config.extra.apiUrl) || "https://wiring.club";
   return {
     ...config,
     // Resolved by Expo config at every build (not cached by Metro). See src/api/config.ts.
-    extra: { ...config.extra, apiUrl: process.env.EXPO_PUBLIC_API_URL || (config.extra && config.extra.apiUrl) || "https://wiring.date" },
+    extra: { ...config.extra, apiUrl: configuredApi.replace(/^https:\/\/wiring\.date\/?$/, "https://wiring.club") },
     plugins: [...(config.plugins || []), "./plugins/withAndroidSigning", "./plugins/withSceneLifecycle"].map((plugin) => {
       const name = Array.isArray(plugin) ? plugin[0] : plugin;
       return name === "expo-build-properties"

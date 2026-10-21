@@ -4,12 +4,15 @@ import { usePathname, useRouter } from "expo-router";
 import { endpoints } from "../api/client";
 import { useAuth } from "../auth";
 import { Text } from "../ui/Typography";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme";
 export function Inbox() {
   const { user, setUser } = useAuth();
   const router = useRouter();
   const path = usePathname();
   const t = useTheme();
+  const insets = useSafeAreaInsets();
+  const touch = useRef<{ x: number; y: number } | null>(null);
   const [notice, setNotice] = useState<{ body: string; path: string } | null>(
     null,
   );
@@ -28,7 +31,7 @@ export function Inbox() {
       try {
         const r = await endpoints.inbox();
         if (!alive || !current.current) return;
-        setUser({ ...current.current, likes_in: r.likes_in, unread: r.unread });
+        setUser({ ...current.current, likes_in: r.likes_in, unread: r.unread, unread_chats: r.unread_chats });
         const notes = r.notices.filter((n) => !seen.current.has(n.id));
         notes.forEach((n) => seen.current.add(n.id));
         if (notes.length) {
@@ -66,17 +69,19 @@ export function Inbox() {
   }, [user?.id, path, setUser]);
   useEffect(() => {
     if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), 6000);
+    const timer = setTimeout(() => setNotice(null), 4000);
     return () => clearTimeout(timer);
   }, [notice]);
   if (!notice) return null;
   return (
     <View
+      onTouchStart={(e) => { touch.current = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY }; }}
+      onTouchEnd={(e) => { const start = touch.current; if (start && Math.hypot(e.nativeEvent.pageX - start.x, e.nativeEvent.pageY - start.y) > 35) setNotice(null); touch.current = null; }}
       style={{
         position: "absolute",
         left: 16,
         right: 16,
-        bottom: 90,
+        top: insets.top + 64,
         backgroundColor: t.card,
         borderWidth: 1,
         borderColor: t.border,
@@ -85,6 +90,7 @@ export function Inbox() {
         zIndex: 100,
       }}
     >
+      <Pressable accessibilityLabel="Закрыть уведомление" onPress={() => setNotice(null)} style={{ alignSelf: "flex-end", padding: 6 }}><Text style={{ color: t.text }}>×</Text></Pressable>
       <Pressable
         accessibilityRole="button"
         onPress={() => {

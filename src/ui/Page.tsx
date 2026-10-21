@@ -204,6 +204,7 @@ export function Header({
           <Avatar uri={user?.photo} name={user?.name} size={40} />
         </Pressable>}
       </View>
+      {prefs.themeError ? <Text accessibilityRole="alert" style={{ color: t.danger, fontSize: 12, paddingHorizontal: 12 }}>{prefs.themeError}</Text> : null}
       {themeMenu && (
         <Modal title="Оформление" onClose={() => setThemeMenu(false)}>
           {THEME_LIST.map((i) => (

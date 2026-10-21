@@ -15,9 +15,9 @@ export function ProfileView({ person }: { person: Person }) {
   const label = useTagLabel();
   const catalog = useCatalog();
   const { contentWidth, height } = useLayout();
-  const width = contentWidth - 32;
+  const width = Math.min(contentWidth - 32, height * 0.66 * 0.75);
   const [page, setPage] = useState(0);
-  const [aspect, setAspect] = useState(0.75);
+  const aspect = 0.75;
   const photos = person.photos?.length
     ? person.photos
     : person.photo
@@ -28,6 +28,7 @@ export function ProfileView({ person }: { person: Person }) {
     <View>
       <View
         style={{
+          width, alignSelf: "center",
           overflow: "hidden",
           borderRadius: 26,
           backgroundColor: t.photo,
@@ -48,12 +49,9 @@ export function ProfileView({ person }: { person: Person }) {
               key={i}
               source={mediaSource(p)}
               style={{ width, height: h }}
-              contentFit="contain"
+              contentFit="cover"
               accessibilityLabel={`Фото ${i + 1} из ${photos.length}: ${person.name}`}
-              onLoad={(e) => {
-                if (i === page && e.source.width)
-                  setAspect(e.source.width / e.source.height);
-              }}
+
             />
           ))}
         </ScrollView>

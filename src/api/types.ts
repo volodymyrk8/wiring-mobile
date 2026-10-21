@@ -29,6 +29,7 @@ export type Person = {
 
 export type Me = Person & {
   email: string;
+  theme?: string | null;
   guest?: boolean;
   plus?: boolean;
   needs_profile?: boolean;
@@ -38,6 +39,7 @@ export type Me = Person & {
   notify_push?: boolean;
   /** Unread chat messages and incoming likes, from /api/me. */
   unread?: number;
+  unread_chats?: number;
   likes_in?: number;
   /** Who can see my profile ("Кому показывать мою анкету"). */
   seek_min_age?: number;
@@ -79,6 +81,7 @@ export type Message = {
   mine?: boolean;
   body?: string;
   photo_url?: string;
+  photo_urls?: string[];
   audio_url?: string;
   transcript?: string;
   edited?: boolean;

@@ -12,7 +12,7 @@ import { endpoints, setApiHooks } from "./api/client";
 import { clearSession, getToken, loadTokens, setToken } from "./api/tokens";
 import type { Me, Session } from "./api/types";
 import { loadFilters } from "./filters";
-import { loadPrefs } from "./prefs";
+import { loadPrefs, syncAccountTheme } from "./prefs";
 import { unregisterPush } from "./push";
 
 type AuthState = {
@@ -36,6 +36,9 @@ const Ctx = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Me | null>(null);
+  const userId = user?.id;
+  const userTheme = user?.theme;
+  useEffect(() => { syncAccountTheme(userId ? { id: userId, theme: userTheme } : null); }, [userId, userTheme]);
   const [loading, setLoading] = useState(true);
   const [upgradeRequired, setUpgradeRequired] = useState<string | null>(null);
 
@@ -81,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((prev) => ({
       ...next,
       unread: next.unread ?? prev?.unread,
+      unread_chats: next.unread_chats ?? prev?.unread_chats,
       likes_in: next.likes_in ?? prev?.likes_in,
     }));
   }, []);

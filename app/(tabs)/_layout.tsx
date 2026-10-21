@@ -43,7 +43,7 @@ export default function TabsLayout() {
         name="chats"
         options={{
           title: "Чаты",
-          tabBarBadge: user?.unread || undefined,
+          tabBarBadge: (user?.unread_chats ?? user?.unread) || undefined,
           tabBarIcon: ({ color }) => (
             <Ionicons name="chatbubbles-outline" color={color} size={22} />
           ),

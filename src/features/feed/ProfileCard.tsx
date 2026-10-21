@@ -12,10 +12,12 @@ export function ProfileCard({
   person,
   width,
   height,
+  recommendationSource,
 }: {
   person: Person;
   width: number;
   height: number;
+  recommendationSource?: string;
 }) {
   const t = useTheme();
   const { user } = useAuth();
@@ -25,7 +27,7 @@ export function ProfileCard({
   const looking = catalog?.looking_for?.find(i => i.id === person.looking_for)?.label;
   const intents = (person.intents?.length ? person.intents : person.intent ? [person.intent] : []).map(label);
   const open = person.gender === "woman" ? "открыта" : person.gender === "man" ? "открыт" : "открыто";
-  const [aspect, setAspect] = useState(0.75);
+  const aspect = 0.75;
   const [page, setPage] = useState(0);
   const photos = person.photos?.length
     ? person.photos
@@ -62,10 +64,7 @@ export function ProfileCard({
             contentFit="cover"
             style={{ width: w, height: h }}
             accessibilityLabel={`Фото ${i + 1} из ${photos.length}: ${person.name}`}
-            onLoad={(e) => {
-              if (i === page && e.source.width && e.source.height)
-                setAspect(e.source.width / e.source.height);
-            }}
+
           />
         ))}
       </ScrollView>
@@ -103,9 +102,8 @@ export function ProfileCard({
           height: Math.min(230, h * 0.5),
         }}
       />
-      <View
-        pointerEvents="box-none"
-        style={{ position: "absolute", bottom: 10, left: 14, right: 14 }}
+      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}
+        style={{ position: "absolute", bottom: 10, left: 14, right: 14, maxHeight: h * 0.7 }}
       >
         <Text
           style={{ fontFamily: fonts.serif, fontSize: 28, color: t.onPhoto }}
@@ -167,7 +165,14 @@ export function ProfileCard({
             );
           })}
         </View>
-      </View>
+        {recommendationSource && <View style={{ gap: 4, marginTop: 8, backgroundColor: "#0008", padding: 8, borderRadius: 10 }}>
+          <Text style={{ color: t.onPhoto, fontSize: 13, fontWeight: "600" }}>Почему может подойти</Text>
+          <Text style={{ color: t.onPhoto, fontSize: 12, lineHeight: 17 }}>
+            {recommendationSource === "local" ? "Jev сейчас недоступен: порядок по совпадениям анкет. " : "Jev ранжирует предварительный список. "}
+            {person.recommendation_reasons?.join(". ")}. Это совпадения в анкетах, а не гарантия совместимости.
+          </Text>
+        </View>}
+      </ScrollView>
       {photos.length > 1 && (
         <View style={{ position: "absolute", top: 26, right: 12 }}>
           <Text style={{ color: t.onPhoto, fontSize: 11 }}>

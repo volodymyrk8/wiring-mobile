@@ -7,5 +7,5 @@ import Constants from "expo-constants";
  * once shipped with a simulator's http://127.0.0.1:5070).
  */
 export const API_URL: string = (
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) || "https://wiring.date"
+  (Constants.expoConfig?.extra?.apiUrl as string | undefined) || "https://wiring.club"
 ).replace(/\/+$/, "");

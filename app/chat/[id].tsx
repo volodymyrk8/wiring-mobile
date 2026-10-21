@@ -36,10 +36,13 @@ const time = (ts: number) =>
     minute: "2-digit",
   });
 export default function ChatScreen() {
+  const peerId = Number(useLocalSearchParams<{ id: string }>().id);
+  return <ChatThreadScreen key={peerId} peerId={peerId} />;
+}
+function ChatThreadScreen({ peerId }: { peerId: number }) {
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const peerId = Number(useLocalSearchParams<{ id: string }>().id);
   const [peer, setPeer] = useState<Thread["peer"] | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [openers, setOpeners] = useState<string[]>([]);
@@ -52,30 +55,28 @@ export default function ChatScreen() {
   const [editing, setEditing] = useState<Message | null>(null);
   const [editText, setEditText] = useState("");
   const [deleting, setDeleting] = useState<Message | null>(null);
+  const [photoDraft, setPhotoDraft] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recording = useAudioRecorderState(recorder);
   const active = useRef(false);
   const sequence = useRef(0);
-  const polling = useRef(false);
+  const pollRequest = useRef(0);
   const stopping = useRef(false);
   const poll = useCallback(async () => {
-    if (polling.current) return;
-    polling.current = true;
+    const request = ++pollRequest.current;
     const seq = sequence.current;
     try {
       const r = await endpoints.thread(peerId);
-      if (active.current && sequence.current === seq) {
+      if (active.current && sequence.current === seq && request === pollRequest.current) {
         setPeer(r.peer);
         setMessages(r.messages);
         setOpeners(r.openers || []);
         setError("");
       }
     } catch (e) {
-      if (active.current && sequence.current === seq)
+      if (active.current && sequence.current === seq && request === pollRequest.current)
         setError(e instanceof Error ? e.message : "Чат недоступен");
-    } finally {
-      polling.current = false;
     }
   }, [peerId]);
   useFocusEffect(
@@ -141,18 +142,18 @@ export default function ChatScreen() {
     const picked = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       quality: 0.85,
+      allowsMultipleSelection: true,
+      selectionLimit: 10,
     });
     if (picked.canceled || !picked.assets[0] || !active.current) return;
+    setPhotoDraft(picked.assets.slice(0, 10));
+  };
+  const confirmPhotos = async () => {
+    if (busy || !photoDraft.length) return;
     setBusy(true);
     try {
-      const a = picked.assets[0];
-      await endpoints.sendPhoto(
-        peerId,
-        a.uri,
-        a.mimeType || "image/jpeg",
-        a.fileName || "photo.jpg",
-        reply?.id,
-      );
+      await endpoints.sendPhotos(peerId, photoDraft, reply?.id);
+      setPhotoDraft([]);
       setReply(null);
       await poll();
     } catch (e) {
@@ -196,6 +197,15 @@ export default function ChatScreen() {
         if (active.current) void finishVoice(true);
       });
   }, [recording, finishVoice]);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active" && recorder.isRecording) {
+        void finishVoice(false);
+        setError("Запись отменена при уходе с экрана. Запиши сообщение ещё раз.");
+      }
+    });
+    return () => sub.remove();
+  }, [recorder, finishVoice]);
   const startVoice = async () => {
     if (busy || recording.isRecording) return;
     setBusy(true);
@@ -210,7 +220,8 @@ export default function ChatScreen() {
         allowsRecording: true,
       });
       await recorder.prepareToRecordAsync();
-      if (active.current) recorder.record();
+      if (active.current && AppState.currentState === "active") recorder.record();
+      else await setAudioModeAsync({ allowsRecording: false });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Не удалось начать запись");
     } finally {
@@ -241,7 +252,7 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: t.bg }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <Header title="Чат" back />
       <Column>
@@ -279,6 +290,8 @@ export default function ChatScreen() {
         ) : (
           <FlatList
             inverted
+            keyboardShouldPersistTaps="handled"
+            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             data={data}
             keyExtractor={(m) => ("cid" in m ? m.cid : String(m.id))}
             contentContainerStyle={{
@@ -346,18 +359,11 @@ export default function ChatScreen() {
                           (item.reply_to.has_photo ? "Фото" : "Голосовое")}
                     </Text>
                   )}
-                  {item.photo_url && (
-                    <Pressable
-                      accessibilityLabel="Открыть фото"
-                      onPress={() => setPhoto(item.photo_url!)}
-                    >
-                      <Image
-                        source={mediaSource(item.photo_url)}
-                        style={{ width: 220, height: 220, borderRadius: 10 }}
-                        contentFit="cover"
-                      />
+                  {(item.photo_urls?.length ? item.photo_urls : item.photo_url ? [item.photo_url] : []).map((src) => (
+                    <Pressable key={src} accessibilityLabel="Открыть фото" onPress={() => setPhoto(src)}>
+                      <Image source={mediaSource(src)} style={{ width: 220, height: 220, borderRadius: 10, marginBottom: 4 }} contentFit="cover" />
                     </Pressable>
-                  )}
+                  ))}
                   {item.audio_url && <Voice message={item} />}
                   {!!item.body && (
                     <Text
@@ -494,6 +500,16 @@ export default function ChatScreen() {
           )}
         </View>
       </Column>
+      {photoDraft.length > 0 && (
+        <Modal title={`Отправить фото · ${photoDraft.length}`} onClose={() => !busy && setPhotoDraft([])}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            {photoDraft.map((a) => <Image key={a.uri} source={{ uri: a.uri }} style={{ width: 100, height: 100, borderRadius: 10 }} />)}
+          </View>
+          <Hint>{busy ? "Загружаем фото…" : "Фото отправятся одним сообщением."}</Hint>
+          <Button title="Отправить вместе" busy={busy} onPress={() => void confirmPhotos()} />
+          <Button title="Отмена" kind="ghost" disabled={busy} onPress={() => setPhotoDraft([])} />
+        </Modal>
+      )}
       {selected && (
         <Modal title="Сообщение" onClose={() => setSelected(null)}>
           <Button

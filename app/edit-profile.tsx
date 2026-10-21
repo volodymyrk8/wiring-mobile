@@ -201,13 +201,14 @@ export default function EditProfile({
         </>
       )}
       <SectionTitle>Фото</SectionTitle>
+      <Hint>Меняй порядок стрелками под фото. Первое фото — аватар в ленте.</Hint>
       <Check
         checked={draft.photo_rights_consent}
         onChange={(v) => set("photo_rights_consent", v)}
         label="Загружаю только свои фото и разрешаю показывать их участникам WIRING"
       />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {photos.map((p) => (
+        {photos.map((p, index) => (
           <View
             key={p.id}
             style={{
@@ -248,11 +249,21 @@ export default function EditProfile({
             >
               <Text style={{ color: "white" }}>×</Text>
             </Pressable>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", backgroundColor: t.card }}>
+              {[-1, 1].map((delta) => <Pressable key={delta} disabled={busy || index + delta < 0 || index + delta >= photos.length}
+                accessibilityLabel={`Передвинуть фото ${index + 1} ${delta < 0 ? "влево" : "вправо"}`}
+                style={{ padding: 6, opacity: index + delta < 0 || index + delta >= photos.length ? 0.3 : 1 }}
+                onPress={() => void run(async () => {
+                  const ids = photos.map((photo) => photo.id);
+                  [ids[index], ids[index + delta]] = [ids[index + delta], ids[index]];
+                  await endpoints.orderPhotos(ids); await refresh();
+                })}><Text style={{ color: t.text }}>{delta < 0 ? "←" : "→"}</Text></Pressable>)}
+            </View>
             {p.is_primary && (
               <Text
                 style={{
                   position: "absolute",
-                  bottom: 6,
+                  top: 6,
                   left: 6,
                   color: t.accentText,
                   backgroundColor: t.accent,

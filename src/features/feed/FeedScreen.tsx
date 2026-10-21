@@ -15,7 +15,6 @@ import { useTheme } from "../../theme";
 import { FilterButton, FiltersSheet } from "../../ui/FiltersSheet";
 import { Button, Empty, ErrorText } from "../../ui/kit";
 import { Header, Confirm, Hint } from "../../ui/Page";
-import { Text } from "../../ui/Typography";
 import { MatchModal } from "../../ui/MatchModal";
 import { useLayout } from "../../ui/layout";
 import { appendFeed, initialFeed } from "./state";
@@ -185,7 +184,7 @@ export function FeedScreen({
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <Header
-        compact={!recommendations}
+        compact
         title={recommendations ? "Для тебя" : "Лента"}
         right={
           !recommendations ? (
@@ -212,20 +211,6 @@ export function FeedScreen({
             }
           />
         </View>
-      )}
-      {recommendations && (
-        <Text
-          style={{
-            color: t.muted,
-            fontSize: 12,
-            paddingHorizontal: 16,
-            paddingBottom: 6,
-          }}
-        >
-          {state.source === "local"
-            ? "Jev сейчас недоступен: порядок по совпадениям анкет"
-            : "Jev ранжирует предварительный список"}
-        </Text>
       )}
       <ErrorText>{error}</ErrorText>
       <View
@@ -262,32 +247,10 @@ export function FeedScreen({
                 <ProfileCard
                   person={item}
                   width={contentWidth - 20}
-                  height={height - (recommendations ? 85 : 8)}
+                  height={height - 8}
+                  recommendationSource={recommendations ? state.source || "api" : undefined}
                 />
-                {recommendations && (
-                  <View
-                    style={{
-                      width: "100%",
-                      maxWidth: 508,
-                      paddingHorizontal: 12,
-                      paddingTop: 8,
-                    }}
-                  >
-                    <Text
-                      style={{ color: t.text, fontSize: 12, fontWeight: "600" }}
-                    >
-                      Почему может подойти
-                    </Text>
-                    {item.recommendation_reasons?.map((reason) => (
-                      <Text
-                        key={reason}
-                        style={{ color: t.muted, fontSize: 12 }}
-                      >
-                        • {reason}
-                      </Text>
-                    ))}
-                  </View>
-                )}
+
               </View>
             )}
           />

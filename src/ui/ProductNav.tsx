@@ -17,7 +17,7 @@ export function ProductNav() {
     { label: "Главная", route: user ? "/(tabs)/home" : "/", icon: "home-outline", active: path === "/" || path === "/home" },
     { label: "Лента", route: "/(tabs)/feed", icon: "albums-outline", active: path === "/feed" },
     { label: "Лайки", route: "/(tabs)/likes", icon: "heart-outline", active: path === "/likes", badge: user?.likes_in },
-    { label: "Чаты", route: "/(tabs)/chats", icon: "chatbubbles-outline", active: path === "/chats", badge: user?.unread },
+    { label: "Чаты", route: "/(tabs)/chats", icon: "chatbubbles-outline", active: path === "/chats", badge: user?.unread_chats ?? user?.unread },
   ];
   if (user?.jev_feed_unlocked && user?.jev_feed_enabled) items.push({ label: "Для тебя", route: "/(tabs)/for-you", icon: "sparkles-outline", active: path === "/for-you" });
   items.push({ label: user ? "Профиль" : "Войти", route: user ? "/(tabs)/profile" : "/login", icon: "person-circle-outline", active: path === "/profile" || path === `/person/${user?.id}` || path === "/login" });

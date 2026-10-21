@@ -107,6 +107,7 @@ export const endpoints = {
     api<{
       likes_in: number;
       unread: number;
+      unread_chats?: number;
       notices: { id: number; kind: string; body: string; from_id?: number }[];
     }>("/api/inbox"),
   readNotices: (ids: number[]) => api("/api/notices/read", json({ ids })),
@@ -184,6 +185,14 @@ export const endpoints = {
       "/api/messages",
       json({ to_id, body, client_id, reply_to_id }),
     ),
+  sendPhotos: (to_id: number, photos: { uri: string; mimeType?: string | null; fileName?: string | null }[], reply_to_id?: number) => {
+    const form = new FormData();
+    form.append("to_id", String(to_id));
+    if (reply_to_id) form.append("reply_to_id", String(reply_to_id));
+    photos.forEach((a) => form.append("files", { uri: a.uri, name: a.fileName || "photo.jpg", type: a.mimeType || "image/jpeg" } as any));
+    return api("/api/messages/photo", { method: "POST", body: form });
+  },
+  orderPhotos: (ids: number[]) => api("/api/photos/order", json({ ids }, "PATCH")),
   sendPhoto: (
     to_id: number,
     uri: string,
