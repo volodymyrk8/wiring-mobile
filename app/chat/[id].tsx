@@ -501,12 +501,12 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
         </View>
       </Column>
       {photoDraft.length > 0 && (
-        <Modal title={`Отправить фото · ${photoDraft.length}`} onClose={() => !busy && setPhotoDraft([])}>
+        <Modal title={photoDraft.length === 1 ? "Отправить фото" : `Отправить фото · ${photoDraft.length}`} onClose={() => !busy && setPhotoDraft([])}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            {photoDraft.map((a) => <Image key={a.uri} source={{ uri: a.uri }} style={{ width: 100, height: 100, borderRadius: 10 }} />)}
+            {photoDraft.map((a) => <Image key={a.uri} source={{ uri: a.uri }} contentFit={photoDraft.length === 1 ? "contain" : "cover"} style={photoDraft.length === 1 ? { width: "100%", height: 280, borderRadius: 10 } : { width: 100, height: 100, borderRadius: 10 }} />)}
           </View>
-          <Hint>{busy ? "Загружаем фото…" : "Фото отправятся одним сообщением."}</Hint>
-          <Button title="Отправить вместе" busy={busy} onPress={() => void confirmPhotos()} />
+          <Hint>{busy ? "Загружаем фото…" : photoDraft.length === 1 ? "Можно отменить перед отправкой." : "Фото отправятся одним сообщением."}</Hint>
+          <Button title={photoDraft.length === 1 ? "Отправить" : "Отправить вместе"} busy={busy} onPress={() => void confirmPhotos()} />
           <Button title="Отмена" kind="ghost" disabled={busy} onPress={() => setPhotoDraft([])} />
         </Modal>
       )}
