@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../src/i18n";
 import { useState } from "react";
 import { View } from "react-native";
 import { Image } from "expo-image";
@@ -11,6 +12,7 @@ import { Page, Title, Hint, Check } from "../src/ui/Page";
 import { Button, ErrorText, Field, Row } from "../src/ui/kit";
 import { CityPicker } from "../src/ui/CityPicker";
 export default function Onboard() {
+  useLanguage();
   const { user, setUser, refresh } = useAuth();
   const catalog = useCatalog();
   const router = useRouter();
@@ -25,7 +27,7 @@ export default function Onboard() {
     user?.prompts?.[0]?.id || catalog?.prompts?.[0]?.id || "special";
   const photo = async () => {
     if (!consent) {
-      setError("Сначала отметь галочку про свои фото");
+      setError(tr("Сначала отметь галочку про свои фото"));
       return;
     }
     const picked = await ImagePicker.launchImageLibraryAsync({
@@ -44,7 +46,7 @@ export default function Onboard() {
       );
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Фото не загрузилось");
+      setError(e instanceof Error ? e.message : tr("Фото не загрузилось"));
     } finally {
       setBusy(false);
     }
@@ -52,7 +54,7 @@ export default function Onboard() {
   const finish = async (skip: boolean) => {
     if (!user || busy) return;
     if (!skip && !city) {
-      setError("Выбери город");
+      setError(tr("Выбери город"));
       return;
     }
     setBusy(true);
@@ -71,23 +73,21 @@ export default function Onboard() {
       await refresh();
       router.replace("/(tabs)/feed");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не получилось");
+      setError(e instanceof Error ? e.message : tr("Не получилось"));
       setBusy(false);
     }
   };
   return (
-    <Page title="Настройка" back={false}>
-      <Title>Ещё чуть-чуть</Title>
+    <Page title={tr("Настройка")} back={false}>
+      <Title>{tr("Ещё чуть-чуть")}</Title>
       <Hint>
-        Два фото и один промпт сильно лучше пустой анкеты. Можно пропустить, но
-        тогда тебя труднее узнать.
-      </Hint>
-      <Hint>Фото — хотя бы ещё одно</Hint>
+        {tr("Два фото и один промпт сильно лучше пустой анкеты. Можно пропустить, но тогда тебя труднее узнать.")}</Hint>
+      <Hint>{tr("Фото — хотя бы ещё одно")}</Hint>
       {user?.needs_photo_consent && (
         <Check
           checked={consent}
           onChange={setConsent}
-          label="Загружаю только свои фото и разрешаю показывать их участникам WIRING"
+          label={tr("Загружаю только свои фото и разрешаю показывать их участникам WIRING")}
         />
       )}
       <View
@@ -107,20 +107,20 @@ export default function Onboard() {
         ))}
       </View>
       <Button
-        title="+ Добавить фото"
+        title={tr("+ Добавить фото")}
         kind="ghost"
         disabled={busy}
         onPress={() => void photo()}
       />
       <Row
         icon="location-outline"
-        title="Город"
-        subtitle={city || "Не указывать"}
+        title={tr("Город")}
+        subtitle={city || tr("Не указывать")}
         onPress={() => setCityOpen(true)}
       />
       <Field
-        label="Как тебе писать"
-        placeholder="Сразу по делу, голосовые ок / нет"
+        label={tr("Как тебе писать")}
+        placeholder={tr("Сразу по делу, голосовые ок / нет")}
         value={communication}
         onChangeText={setCommunication}
         multiline
@@ -128,9 +128,9 @@ export default function Onboard() {
       />
       <Field
         label={
-          catalog?.prompts?.find((p) => p.id === prompt)?.label || "Один промпт"
+          catalog?.prompts?.find((p) => p.id === prompt)?.label || tr("Один промпт")
         }
-        placeholder="Расскажи что-то важное о себе"
+        placeholder={tr("Расскажи что-то важное о себе")}
         value={answer}
         onChangeText={setAnswer}
         multiline
@@ -138,12 +138,12 @@ export default function Onboard() {
       />
       <ErrorText>{error}</ErrorText>
       <Button
-        title="Дальше в ленту"
+        title={tr("Дальше в ленту")}
         busy={busy}
         onPress={() => void finish(false)}
       />
       <Button
-        title="Пропустить"
+        title={tr("Пропустить")}
         kind="ghost"
         disabled={busy}
         onPress={() => void finish(true)}

@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../src/i18n";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { endpoints } from "../src/api/client";
@@ -28,6 +29,7 @@ const copy = {
   ],
 };
 export default function Decisions() {
+  useLanguage();
   const router = useRouter();
   const [archive, setArchive] = useState<Archive | null>(null);
   const [error, setError] = useState("");
@@ -54,21 +56,19 @@ export default function Decisions() {
       clearFeeds();
       setPending(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не получилось");
+      setError(e instanceof Error ? e.message : tr("Не получилось"));
     } finally {
       setBusy(false);
     }
   };
   return (
-    <Page title="решения">
-      <Title>Лайки, дизлайки и блок</Title>
+    <Page title={tr("решения")}>
+      <Title>{tr("Лайки, дизлайки и блок")}</Title>
       <Hint>
-        Сюда можно зайти, когда хочется передумать. В ленте и чатах этого списка
-        нет.
-      </Hint>
+        {tr("Сюда можно зайти, когда хочется передумать. В ленте и чатах этого списка нет.")}</Hint>
       <ErrorText>{error}</ErrorText>
       {!archive ? (
-        <Hint>Загружаем…</Hint>
+        <Hint>{tr("Загружаем…")}</Hint>
       ) : (
         (
           Object.keys(archive).filter((k) =>
@@ -77,7 +77,7 @@ export default function Decisions() {
         ).map((key) => (
           <Section
             key={key}
-            title={{ likes: "Лайки", passes: "Дизлайки", blocks: "Блок" }[key]}
+            title={{ likes: tr("Лайки"), passes: tr("Дизлайки"), blocks: tr("Блок") }[key]}
             people={archive[key]}
             onOpen={(p) => router.push(`/person/${p.id}`)}
             onAction={(p) =>
@@ -95,19 +95,19 @@ export default function Decisions() {
             }
             actionLabel={
               key === "blocks"
-                ? "Разблокировать"
+                ? tr("Разблокировать")
                 : key === "passes"
-                  ? "Вернуть"
-                  : "Убрать"
+                  ? tr("Вернуть")
+                  : tr("Убрать")
             }
           />
         ))
       )}
       {pending && (
         <Confirm
-          title={copy[pending.action][0]}
-          body={copy[pending.action][1]}
-          label={copy[pending.action][2]}
+          title={tr(copy[pending.action][0])}
+          body={tr(copy[pending.action][1])}
+          label={tr(copy[pending.action][2])}
           busy={busy}
           onConfirm={() => void apply()}
           onClose={() => !busy && setPending(null)}
@@ -129,18 +129,19 @@ function Section({
   onAction: (p: Person) => void;
   actionLabel: string;
 }) {
+  useLanguage();
   return (
     <>
       <SectionTitle>
         {title} · {people.length}
       </SectionTitle>
-      {!people.length && <Hint>Пока никого.</Hint>}
+      {!people.length && <Hint>{tr("Пока никого.")}</Hint>}
       {people.map((p) => (
         <Row
           key={p.id}
           icon="person-outline"
           title={`${p.name}${p.age ? `, ${p.age}` : ""}`}
-          subtitle={p.city}
+          subtitle={tr(p.city || "")}
           onPress={() => onOpen(p)}
           right={
             <Button

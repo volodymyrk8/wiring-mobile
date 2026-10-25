@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../i18n";
 import { useState, useRef } from "react";
 import { Image } from "expo-image";
 import { Pressable, ScrollView, View } from "react-native";
@@ -10,6 +11,7 @@ import { Hint } from "./Page";
 import { Chip, SectionTitle } from "./kit";
 import { Text, fonts } from "./Typography";
 export function ProfileView({ person }: { person: Person }) {
+  useLanguage();
   const gallery = useRef<ScrollView>(null);
   const t = useTheme();
   const label = useTagLabel();
@@ -50,7 +52,7 @@ export function ProfileView({ person }: { person: Person }) {
               source={mediaSource(p)}
               style={{ width, height: h }}
               contentFit="cover"
-              accessibilityLabel={`Фото ${i + 1} из ${photos.length}: ${person.name}`}
+              accessibilityLabel={tr("Фото {0} из {1}: {2}", i + 1, photos.length, person.name)}
 
             />
           ))}
@@ -62,7 +64,7 @@ export function ProfileView({ person }: { person: Person }) {
             <Pressable
               key={i}
               accessibilityRole="button"
-              accessibilityLabel={`Фото ${i + 1}`}
+              accessibilityLabel={tr("Фото {0}", i + 1)}
               accessibilityState={{ selected: i === page }}
               onPress={() => {
                 setPage(i);
@@ -99,17 +101,14 @@ export function ProfileView({ person }: { person: Person }) {
         {[
           catalog?.genders?.find((i) => i.id === person.gender)?.label,
           catalog?.looking_for?.find((i) => i.id === person.looking_for)?.label,
-          person.city,
-          person.job,
-          person.height ? `${person.height} см` : "",
+          tr(person.city || ""),
+          person.height ? tr("{0} см", person.height) : "",
         ]
           .filter(Boolean)
           .join(" · ")}
       </Hint>
       <Hint>
-        Диагнозы не проверяем: люди указывают их сами. Если заметим ложь,
-        аккаунт может быть забанен.
-      </Hint>
+        {tr("Диагнозы не проверяем: люди указывают их сами. Если заметим ложь, аккаунт может быть забанен.")}</Hint>
       {!!person.bio && (
         <Text
           style={{
@@ -122,9 +121,14 @@ export function ProfileView({ person }: { person: Person }) {
           {person.bio}
         </Text>
       )}
+      {!!person.job?.trim() && (
+        <Text style={{ color: t.text, fontSize: 16, lineHeight: 24, marginBottom: 16 }}>
+          {tr("Занятость: ")}{person.job.trim()}
+        </Text>
+      )}
       {!!person.communication && (
         <>
-          <SectionTitle>как тебе писать</SectionTitle>
+          <SectionTitle>{tr("как тебе писать")}</SectionTitle>
           <Hint>{person.communication}</Hint>
         </>
       )}
@@ -137,9 +141,9 @@ export function ProfileView({ person }: { person: Person }) {
         </View>
       ))}
       {[
-        ["Особенности", person.neuro],
-        ["Вайб", person.vibe],
-        ["Что ищет", person.intents],
+        [tr("Особенности"), person.neuro],
+        [tr("Вайб"), person.vibe],
+        [tr("Что ищет"), person.intents],
       ].map(([title, ids]) =>
         Array.isArray(ids) && ids.length ? (
           <View key={String(title)}>

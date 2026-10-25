@@ -1,62 +1,33 @@
 import { useEffect, useState } from "react";
 import { endpoints } from "./api/client";
 import type { Catalog } from "./api/types";
+import { useLanguage, type Language } from "./i18n";
 
-let labels: Record<string, string> | null = null;
-let pending: Promise<void> | null = null;
+const cache = new Map<Language, Catalog>();
+const pending = new Map<Language, Promise<Catalog>>();
 
-function load(): Promise<void> {
-  pending ??= endpoints
-    .catalog()
-    .then((c) => {
-      labels = {};
-      for (const list of [c.neuro, c.vibe, c.intents]) {
-        for (const item of list || [])
-          labels[item.id] = item.label || item.name || item.id;
-      }
-    })
-    .catch(() => {
-      pending = null;
-    });
-  return pending;
-}
-
-/** id → human label for neuro/vibe/intent tags; falls back to the raw id. */
-export function useTagLabel(): (id: string) => string {
-  const [, bump] = useState(0);
+/** Catalog labels depend on language; canonical ids and city values never change. */
+export function useCatalog(): Catalog | null {
+  const language = useLanguage();
+  const [loaded, setLoaded] = useState<{ language: Language; catalog: Catalog } | null>(null);
   useEffect(() => {
     let active = true;
-    if (!labels)
-      load().then(() => {
-        if (active) bump((n) => n + 1);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-  return (id) => labels?.[id] || id;
+    if (!pending.has(language)) pending.set(language, endpoints.catalog(language).then(result => {
+      cache.set(language, result);
+      return result;
+    }).catch(error => { pending.delete(language); throw error; }));
+    void pending.get(language)!.then(result => { if (active) setLoaded({ language, catalog: result }); }).catch(() => undefined);
+    return () => { active = false; };
+  }, [language]);
+  return loaded?.language === language ? loaded.catalog : cache.get(language) || null;
 }
-
-let full: Catalog | null = null;
-let fullPending: Promise<Catalog | null> | null = null;
-
-/** Full catalog (tags, intents, places), cached for the session. */
-export function useCatalog(): Catalog | null {
-  const [catalog, setCatalog] = useState<Catalog | null>(full);
-  useEffect(() => {
-    if (full) return;
-    fullPending ??= endpoints
-      .catalog()
-      .then((c) => (full = c))
-      .catch(() => {
-        fullPending = null;
-        return null;
-      });
-    let alive = true;
-    fullPending.then((c) => alive && c && setCatalog(c));
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return catalog;
+export function useTagLabel(): (id: string) => string {
+  const catalog = useCatalog();
+  return id => {
+    for (const list of [catalog?.neuro, catalog?.vibe, catalog?.intents]) {
+      const item = list?.find(item => item.id === id);
+      if (item) return item.label || item.name || id;
+    }
+    return id;
+  };
 }

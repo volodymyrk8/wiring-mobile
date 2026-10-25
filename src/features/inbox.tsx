@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 import { AppState, Pressable, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
@@ -7,6 +8,7 @@ import { Text } from "../ui/Typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme";
 export function Inbox() {
+  useLanguage();
   const { user, setUser } = useAuth();
   const router = useRouter();
   const path = usePathname();
@@ -90,7 +92,7 @@ export function Inbox() {
         zIndex: 100,
       }}
     >
-      <Pressable accessibilityLabel="Закрыть уведомление" onPress={() => setNotice(null)} style={{ alignSelf: "flex-end", padding: 6 }}><Text style={{ color: t.text }}>×</Text></Pressable>
+      <Pressable accessibilityLabel={tr("Закрыть уведомление")} onPress={() => setNotice(null)} style={{ alignSelf: "flex-end", padding: 6 }}><Text style={{ color: t.text }}>×</Text></Pressable>
       <Pressable
         accessibilityRole="button"
         onPress={() => {

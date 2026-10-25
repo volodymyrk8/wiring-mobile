@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../i18n";
 import { Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { Page, Title } from "./Page";
@@ -11,6 +12,7 @@ export function LegalScreen({
   title: string;
   blocks: Block[];
 }) {
+  useLanguage();
   const t = useTheme();
   const router = useRouter();
   return (
@@ -49,7 +51,7 @@ export function LegalScreen({
                   : undefined
               }
             >
-              {p.text}
+              {tr(p.text)}
             </Text>
           ))}
         </Text>

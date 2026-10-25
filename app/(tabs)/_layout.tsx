@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../../src/i18n";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/auth";
@@ -5,6 +6,7 @@ import { useTheme } from "../../src/theme";
 import { ProductNav } from "../../src/ui/ProductNav";
 import { fonts } from "../../src/ui/Typography";
 export default function TabsLayout() {
+  useLanguage();
   const t = useTheme();
   const { user } = useAuth();
   return (
@@ -19,11 +21,11 @@ export default function TabsLayout() {
         tabBarBadgeStyle: { backgroundColor: t.accent, color: t.accentText },
       }}
     >
-      <Tabs.Screen name="home" options={{ title: "Главная" }} />
+      <Tabs.Screen name="home" options={{ title: tr("Главная") }} />
       <Tabs.Screen
         name="feed"
         options={{
-          title: "Лента",
+          title: tr("Лента"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="albums-outline" color={color} size={22} />
           ),
@@ -32,7 +34,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="likes"
         options={{
-          title: "Лайки",
+          title: tr("Лайки"),
           tabBarBadge: user?.likes_in || undefined,
           tabBarIcon: ({ color }) => (
             <Ionicons name="heart-outline" color={color} size={22} />
@@ -42,7 +44,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="chats"
         options={{
-          title: "Чаты",
+          title: tr("Чаты"),
           tabBarBadge: (user?.unread_chats ?? user?.unread) || undefined,
           tabBarIcon: ({ color }) => (
             <Ionicons name="chatbubbles-outline" color={color} size={22} />
@@ -52,7 +54,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="for-you"
         options={{
-          title: "Для тебя",
+          title: tr("Для тебя"),
           href:
             user?.jev_feed_unlocked && user?.jev_feed_enabled
               ? undefined
@@ -65,7 +67,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Профиль",
+          title: tr("Профиль"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="person-circle-outline" color={color} size={23} />
           ),

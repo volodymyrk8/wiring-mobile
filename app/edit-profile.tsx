@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../src/i18n";
 import { applyNeuroToggle } from "../src/catalogTags";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -35,6 +36,7 @@ import { CityPicker } from "../src/ui/CityPicker";
 export default function EditProfile({
   embedded = false,
 }: { embedded?: boolean } = {}) {
+  useLanguage();
   const { user, setUser, refresh } = useAuth();
   const router = useRouter();
   const catalog = useCatalog();
@@ -100,7 +102,7 @@ export default function EditProfile({
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не получилось");
+      setError(e instanceof Error ? e.message : tr("Не получилось"));
     } finally {
       setBusy(false);
     }
@@ -111,7 +113,7 @@ export default function EditProfile({
   );
   const upload = async () => {
     if (!draft?.photo_rights_consent) {
-      setError("Сначала отметь галочку про свои фото.");
+      setError(tr("Сначала отметь галочку про свои фото."));
       return;
     }
     await run(async () => {
@@ -132,7 +134,7 @@ export default function EditProfile({
   };
   if (!user || !catalog || !draft)
     return (
-      <Page title="Моя анкета" back={!embedded}>
+      <Page title={tr("Моя анкета")} back={!embedded}>
         <ErrorText>{error}</ErrorText>
         <Loading />
       </Page>
@@ -176,36 +178,36 @@ export default function EditProfile({
     </View>
   );
   return (
-    <Page title="Профиль" back={!embedded}>
-      <Title>Моя анкета</Title>
-      <Hint>Фото, немного о себе и то, как тебе комфортно общаться.</Hint>
+    <Page title={tr("Профиль")} back={!embedded}>
+      <Title>{tr("Моя анкета")}</Title>
+      <Hint>{tr("Фото, немного о себе и то, как тебе комфортно общаться.")}</Hint>
       <Hint>
         {state.phase === "idle"
-          ? "Изменения сохраняются автоматически."
+          ? tr("Изменения сохраняются автоматически.")
           : state.phase === "saved"
-            ? "Изменения сохранены"
+            ? tr("Изменения сохранены")
             : state.phase === "saving"
-              ? "Сохраняем…"
+              ? tr("Сохраняем…")
               : state.local
-                ? "Черновик сохранён на устройстве"
-                : "Черновик пока не сохранён на устройстве"}
+                ? tr("Черновик сохранён на устройстве")
+                : tr("Черновик пока не сохранён на устройстве")}
       </Hint>
       {state.phase === "error" && (
         <>
-          <ErrorText>{state.error}</ErrorText>
+          <ErrorText>{tr(state.error)}</ErrorText>
           <Button
-            title="Повторить сохранение"
+            title={tr("Повторить сохранение")}
             kind="ghost"
             onPress={() => void saver.current?.save().catch(() => {})}
           />
         </>
       )}
-      <SectionTitle>Фото</SectionTitle>
-      <Hint>Меняй порядок стрелками под фото. Первое фото — аватар в ленте.</Hint>
+      <SectionTitle>{tr("Фото")}</SectionTitle>
+      <Hint>{tr("Меняй порядок стрелками под фото. Первое фото — аватар в ленте.")}</Hint>
       <Check
         checked={draft.photo_rights_consent}
         onChange={(v) => set("photo_rights_consent", v)}
-        label="Загружаю только свои фото и разрешаю показывать их участникам WIRING"
+        label={tr("Загружаю только свои фото и разрешаю показывать их участникам WIRING")}
       />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {photos.map((p, index) => (
@@ -222,7 +224,7 @@ export default function EditProfile({
           >
             <Pressable
               style={{ flex: 1 }}
-              accessibilityLabel="Сделать аватаром"
+              accessibilityLabel={tr("Сделать аватаром")}
               onPress={() =>
                 void run(async () => {
                   await endpoints.primaryPhoto(p.id);
@@ -236,7 +238,7 @@ export default function EditProfile({
               />
             </Pressable>
             <Pressable
-              accessibilityLabel="Удалить фото"
+              accessibilityLabel={tr("Удалить фото")}
               onPress={() => setRemove(p.id)}
               style={{
                 position: "absolute",
@@ -251,7 +253,7 @@ export default function EditProfile({
             </Pressable>
             <View style={{ flexDirection: "row", justifyContent: "space-between", backgroundColor: t.card }}>
               {[-1, 1].map((delta) => <Pressable key={delta} disabled={busy || index + delta < 0 || index + delta >= photos.length}
-                accessibilityLabel={`Передвинуть фото ${index + 1} ${delta < 0 ? "влево" : "вправо"}`}
+                accessibilityLabel={tr("Передвинуть фото {0} {1}", index + 1, delta < 0 ? tr("влево") : tr("вправо"))}
                 style={{ padding: 6, opacity: index + delta < 0 || index + delta >= photos.length ? 0.3 : 1 }}
                 onPress={() => void run(async () => {
                   const ids = photos.map((photo) => photo.id);
@@ -271,15 +273,14 @@ export default function EditProfile({
                   fontSize: 10,
                 }}
               >
-                аватар
-              </Text>
+                {tr("аватар")}</Text>
             )}
           </View>
         ))}
         {photos.length < (catalog.limits?.photos || 6) && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Добавить фото"
+            accessibilityLabel={tr("Добавить фото")}
             disabled={busy}
             onPress={() => void upload()}
             style={{
@@ -297,49 +298,49 @@ export default function EditProfile({
           </Pressable>
         )}
       </View>
-      <Hint>Нажми фото, чтобы выбрать аватар.</Hint>
-      <SectionTitle>Основное</SectionTitle>
+      <Hint>{tr("Нажми фото, чтобы выбрать аватар.")}</Hint>
+      <SectionTitle>{tr("Основное")}</SectionTitle>
       <Field
-        label="Имя"
+        label={tr("Имя")}
         value={draft.name}
         onChangeText={(v) => set("name", v)}
         maxLength={32}
       />
       <Field
-        label="Возраст"
+        label={tr("Возраст")}
         value={draft.age}
         keyboardType="number-pad"
         maxLength={2}
         onChangeText={(v) => set("age", v)}
       />
-      <SectionTitle>Пол</SectionTitle>
+      <SectionTitle>{tr("Пол")}</SectionTitle>
       {selects("gender", catalog.genders)}
-      <SectionTitle>Кого ищешь</SectionTitle>
+      <SectionTitle>{tr("Кого ищешь")}</SectionTitle>
       {selects("looking_for", catalog.looking_for)}
       <Row
         icon="location-outline"
-        title="Город"
-        subtitle={draft.city || "Не указывать"}
+        title={tr("Город")}
+        subtitle={draft.city || tr("Не указывать")}
         onPress={() => setCityOpen(true)}
       />
       <Field
-        label="Рост, см"
+        label={tr("Рост, см")}
         value={draft.height}
         keyboardType="number-pad"
         maxLength={3}
         onChangeText={(v) => set("height", v)}
       />
       <Field
-        label="Занятие"
+        label={tr("Занятие")}
         value={draft.job}
         onChangeText={(v) => set("job", v)}
         maxLength={120}
       />
-      <SectionTitle>Что ищешь</SectionTitle>
+      <SectionTitle>{tr("Что ищешь")}</SectionTitle>
       {choices("intents", catalog.intents)}
-      <SectionTitle>О себе</SectionTitle>
+      <SectionTitle>{tr("О себе")}</SectionTitle>
       <Field
-        label="О себе"
+        label={tr("О себе")}
         value={draft.bio}
         onChangeText={(v) => set("bio", v)}
         multiline
@@ -347,23 +348,23 @@ export default function EditProfile({
         style={{ minHeight: 100 }}
       />
       <Field
-        label="Как тебе писать"
+        label={tr("Как тебе писать")}
         value={draft.communication}
         onChangeText={(v) => set("communication", v)}
         multiline
         maxLength={500}
       />
-      <SectionTitle>Особенности</SectionTitle>
+      <SectionTitle>{tr("Особенности")}</SectionTitle>
       <Check
         checked={draft.special_data_consent}
         onChange={(v) => set("special_data_consent", v)}
-        label="Согласен(на) на обработку и показ выбранных особенностей"
+        label={tr("Согласен(на) на обработку и показ выбранных особенностей")}
       />
       {choices("neuro", catalog.neuro)}
-      <Hint>Диагнозы не проверяем: люди указывают их сами.</Hint>
-      <SectionTitle>Вайб</SectionTitle>
+      <Hint>{tr("Диагнозы не проверяем: люди указывают их сами.")}</Hint>
+      <SectionTitle>{tr("Вайб")}</SectionTitle>
       {choices("vibe", catalog.vibe)}
-      <SectionTitle>Промпты</SectionTitle>
+      <SectionTitle>{tr("Промпты")}</SectionTitle>
       {draft.prompts.map((p, i) => (
         <View key={p.id}>
           <Field
@@ -381,7 +382,7 @@ export default function EditProfile({
             }
           />
           <Button
-            title="Убрать промпт"
+            title={tr("Убрать промпт")}
             kind="ghost"
             onPress={() =>
               set(
@@ -407,11 +408,11 @@ export default function EditProfile({
             ))}
         </View>
       )}
-      <SectionTitle>Для тебя</SectionTitle>
+      <SectionTitle>{tr("Для тебя")}</SectionTitle>
       {user.jev_feed_unlocked ? (
         <Row
           icon="sparkles-outline"
-          title="Включить вкладку «Для тебя»"
+          title={tr("Включить вкладку «Для тебя»")}
           right={
             <Toggle
               value={!!user.jev_feed_enabled}
@@ -427,13 +428,13 @@ export default function EditProfile({
       ) : (
         <>
           <Field
-            label="Промокод для рекомендаций"
+            label={tr("Промокод для рекомендаций")}
             value={code}
             onChangeText={setCode}
             autoCapitalize="characters"
           />
           <Button
-            title="Активировать"
+            title={tr("Активировать")}
             disabled={!code.trim()}
             busy={busy}
             onPress={() =>
@@ -448,7 +449,7 @@ export default function EditProfile({
       <ErrorText>{error}</ErrorText>
       <View style={{ gap: 10, marginTop: 20 }}>
         <Button
-          title={user.needs_profile ? "Опубликовать анкету" : "Сохранить"}
+          title={user.needs_profile ? tr("Опубликовать анкету") : tr("Сохранить")}
           busy={busy}
           onPress={() =>
             void run(async () => {
@@ -461,12 +462,12 @@ export default function EditProfile({
           }
         />
         <Button
-          title="Посмотреть анкету"
+          title={tr("Посмотреть анкету")}
           kind="ghost"
           onPress={() => router.push(`/person/${user.id}`)}
         />
         <Button
-          title="Кому показывать мою анкету"
+          title={tr("Кому показывать мою анкету")}
           kind="ghost"
           onPress={() => router.push("/visibility")}
         />
@@ -476,7 +477,7 @@ export default function EditProfile({
           onPress={() => router.push("/plus")}
         />
         <Button
-          title="Удалить аккаунт"
+          title={tr("Удалить аккаунт")}
           kind="danger"
           onPress={() => router.push("/delete-account")}
         />
@@ -493,9 +494,9 @@ export default function EditProfile({
       />
       {remove !== null && (
         <Confirm
-          title="Удалить фото?"
-          body="Фото исчезнет из анкеты."
-          label="Удалить"
+          title={tr("Удалить фото?")}
+          body={tr("Фото исчезнет из анкеты.")}
+          label={tr("Удалить")}
           busy={busy}
           onClose={() => !busy && setRemove(null)}
           onConfirm={() =>

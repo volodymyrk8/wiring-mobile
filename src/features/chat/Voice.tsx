@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../../i18n";
 import {
   setAudioModeAsync,
   useAudioPlayer,
@@ -12,6 +13,7 @@ import { Button, ErrorText } from "../../ui/kit";
 import { Text } from "../../ui/Typography";
 import { useTheme } from "../../theme";
 export function Voice({ message }: { message: Message }) {
+  useLanguage();
   const t = useTheme();
   useEffect(() => {
     void setAudioModeAsync({ playsInSilentMode: true });
@@ -28,7 +30,7 @@ export function Voice({ message }: { message: Message }) {
       setTranscript(r.transcript);
       setError("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось распознать");
+      setError(e instanceof Error ? e.message : tr("Не удалось распознать"));
     } finally {
       setBusy(false);
     }
@@ -38,7 +40,7 @@ export function Voice({ message }: { message: Message }) {
   const clock = (v: number) => `${Math.floor(v / 60)}:${String(Math.floor(v % 60)).padStart(2, "0")}`;
   return (
     <View style={{ gap: 10, width: 220, maxWidth: "100%" }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={status.playing ? "Пауза" : "Слушать голосовое"}
+      <Pressable accessibilityRole="button" accessibilityLabel={status.playing ? tr("Пауза") : tr("Слушать голосовое")}
         style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44 }}
         onPress={() => {
           if (status.playing) player.pause();
@@ -54,7 +56,7 @@ export function Voice({ message }: { message: Message }) {
         <Text style={{ color: t.text, lineHeight: 20 }}>{transcript}</Text>
       ) : (
         <Button
-          title="Расшифровать"
+          title={tr("Расшифровать")}
           kind="ghost"
           busy={busy}
           onPress={() => void transcribe()}

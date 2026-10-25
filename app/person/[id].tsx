@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../../src/i18n";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
@@ -11,6 +12,7 @@ import { Button, Chip, ErrorText, Field, Loading } from "../../src/ui/kit";
 import { ProfileView } from "../../src/ui/ProfileView";
 import { MatchModal } from "../../src/ui/MatchModal";
 export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
+  useLanguage();
   const params = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const id = own ? String(user?.id) : params.id;
@@ -66,13 +68,13 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
       else if (router.canGoBack()) router.back();
       else router.replace("/(tabs)/feed");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не получилось");
+      setError(e instanceof Error ? e.message : tr("Не получилось"));
     } finally {
       setBusy(false);
     }
   };
   return (
-    <Page title="Профиль" back={!own}>
+    <Page title={tr("Профиль")} back={!own}>
       <ErrorText>{error}</ErrorText>
       {!person ? (
         <Loading />
@@ -83,11 +85,11 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
             {self ? (
               <>
                 <Button
-                  title="Редактировать анкету"
+                  title={tr("Редактировать анкету")}
                   onPress={() => router.push("/edit-profile")}
                 />
                 <Button
-                  title="Лайки и дизлайки"
+                  title={tr("Лайки и дизлайки")}
                   kind="ghost"
                   onPress={() => router.push("/archive")}
                 />
@@ -96,25 +98,25 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
               <>
                 {person.matched ? (
                   <Button
-                    title="Написать"
+                    title={tr("Написать")}
                     onPress={() => router.push(`/chat/${id}`)}
                   />
                 ) : (
                   <>
                     <Button
-                      title={person.you_liked ? "Лайк отправлен" : "Лайк"}
+                      title={person.you_liked ? tr("Лайк отправлен") : tr("Лайк")}
                       disabled={person.you_liked || busy}
                       onPress={() => void action("like")}
                     />
                     <Button
-                      title="Скрыть"
+                      title={tr("Скрыть")}
                       kind="ghost"
                       disabled={busy}
                       onPress={() => setConfirm("pass")}
                     />
                     {user?.plus && (
                       <Button
-                        title="Отложить на неделю"
+                        title={tr("Отложить на неделю")}
                         kind="ghost"
                         disabled={busy}
                         onPress={() => void action("snooze")}
@@ -123,18 +125,18 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
                   </>
                 )}
                 <Button
-                  title="Пожаловаться"
+                  title={tr("Пожаловаться")}
                   kind="ghost"
                   onPress={() => setReportOpen(true)}
                 />
                 <Button
-                  title="Заблокировать"
+                  title={tr("Заблокировать")}
                   kind="danger"
                   onPress={() => setConfirm("block")}
                 />
                 {person.matched && (
                   <Button
-                    title="Убрать из чатов"
+                    title={tr("Убрать из чатов")}
                     kind="ghost"
                     onPress={() => setConfirm("unmatch")}
                   />
@@ -148,15 +150,15 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
         <Confirm
           title={
             confirm === "pass"
-              ? "Скрыть анкету?"
+              ? tr("Скрыть анкету?")
               : confirm === "block"
-                ? "Заблокировать?"
-                : "Убрать из чатов?"
+                ? tr("Заблокировать?")
+                : tr("Убрать из чатов?")
           }
           body={
             confirm === "block"
-              ? "Человек исчезнет из ленты и чатов. Разблокировать можно в архиве."
-              : "Переписка скроется, анкета уйдёт в дизлайки. Вернуть её можно в архиве своих решений."
+              ? tr("Человек исчезнет из ленты и чатов. Разблокировать можно в архиве.")
+              : tr("Переписка скроется, анкета уйдёт в дизлайки. Вернуть её можно в архиве своих решений.")
           }
           busy={busy}
           onConfirm={() => void action(confirm)}
@@ -165,18 +167,18 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
       )}
       {reportOpen && (
         <Modal
-          title="Пожаловаться"
+          title={tr("Пожаловаться")}
           onClose={() => !busy && setReportOpen(false)}
         >
-          <Hint>Выбери причину. Жалоба скроет человека из ленты и чатов.</Hint>
+          <Hint>{tr("Выбери причину. Жалоба скроет человека из ленты и чатов.")}</Hint>
           <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
             {(
               catalog?.report_reasons || [
-                { id: "spam", label: "Спам" },
-                { id: "fake", label: "Чужие фото" },
-                { id: "harassment", label: "Домогательство" },
-                { id: "underage", label: "Нет 18" },
-                { id: "other", label: "Другое" },
+                { id: "spam", label: tr("Спам") },
+                { id: "fake", label: tr("Чужие фото") },
+                { id: "harassment", label: tr("Домогательство") },
+                { id: "underage", label: tr("Нет 18") },
+                { id: "other", label: tr("Другое") },
               ]
             ).map((i) => (
               <Chip
@@ -188,7 +190,7 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
             ))}
           </View>
           <Field
-            label="Подробности"
+            label={tr("Подробности")}
             value={details}
             onChangeText={setDetails}
             multiline
@@ -196,7 +198,7 @@ export default function PersonScreen({ own = false }: { own?: boolean } = {}) {
           />
           <ErrorText>{error}</ErrorText>
           <Button
-            title="Отправить жалобу"
+            title={tr("Отправить жалобу")}
             busy={busy}
             disabled={!reason}
             onPress={() => void action("report")}

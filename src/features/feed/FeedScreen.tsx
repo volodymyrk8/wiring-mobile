@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../../i18n";
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -25,6 +26,7 @@ export function FeedScreen({
 }: {
   recommendations?: boolean;
 }) {
+  useLanguage();
   const { user, setUser } = useAuth();
   const router = useRouter();
   const t = useTheme();
@@ -66,7 +68,7 @@ export function FeedScreen({
       }
     } catch (e) {
       if (!controller.signal.aborted)
-        setError(e instanceof Error ? e.message : "Не удалось загрузить");
+        setError(e instanceof Error ? e.message : tr("Не удалось загрузить"));
     } finally {
       if (!controller.signal.aborted) {
         loadingKey.current = "";
@@ -149,7 +151,7 @@ export function FeedScreen({
       setConfirm(null);
       if (result.matched) setMatch(result.match || current);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не получилось");
+      setError(e instanceof Error ? e.message : tr("Не получилось"));
     } finally {
       if (active.current) setBusy(false);
     }
@@ -166,7 +168,7 @@ export function FeedScreen({
       setConfirm(null);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось повторить");
+      setError(e instanceof Error ? e.message : tr("Не удалось повторить"));
     } finally {
       setBusy(false);
     }
@@ -185,7 +187,7 @@ export function FeedScreen({
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <Header
         compact
-        title={recommendations ? "Для тебя" : "Лента"}
+        title={recommendations ? tr("Для тебя") : tr("Лента")}
         right={
           !recommendations ? (
             <FilterButton
@@ -198,10 +200,9 @@ export function FeedScreen({
       {user?.paused && (
         <View style={{ paddingHorizontal: 16 }}>
           <Hint>
-            Анкета на паузе: тебя не показывают в ленте, чаты сохраняются.
-          </Hint>
+            {tr("Анкета на паузе: тебя не показывают в ленте, чаты сохраняются.")}</Hint>
           <Button
-            title="Снять паузу"
+            title={tr("Снять паузу")}
             kind="ghost"
             onPress={() =>
               void endpoints
@@ -256,16 +257,16 @@ export function FeedScreen({
           />
         ) : (
           <Empty
-            title={loading ? "Ищем новые анкеты…" : "Новых анкет пока нет"}
+            title={loading ? tr("Ищем новые анкеты…") : tr("Новых анкет пока нет")}
             text={
               recommendations
-                ? "Подходящих анкет сейчас нет. Обнови подбор позже."
-                : "Загляни позже."
+                ? tr("Подходящих анкет сейчас нет. Обнови подбор позже.")
+                : tr("Загляни позже.")
             }
             action={
               <View style={{ gap: 10 }}>
                 <Button
-                  title="Проверить новые"
+                  title={tr("Проверить новые")}
                   kind="ghost"
                   busy={loading}
                   onPress={() => void load()}
@@ -273,12 +274,12 @@ export function FeedScreen({
                 {!recommendations && (
                   <>
                     <Button
-                      title="Показать анкеты ещё раз"
+                      title={tr("Показать анкеты ещё раз")}
                       disabled={!user?.plus || loading}
                       onPress={() => setConfirm("reset")}
                     />
                     {!user?.plus && (
-                      <Hint>Повторный показ доступен с WIRING+.</Hint>
+                      <Hint>{tr("Повторный показ доступен с WIRING+.")}</Hint>
                     )}
                   </>
                 )}
@@ -297,20 +298,20 @@ export function FeedScreen({
           }}
         >
           <ActionCircle
-            label="Скрыть"
+            label={tr("Скрыть")}
             disabled={busy}
             onPress={() => setConfirm("pass")}
           >
             <Ionicons name="close" size={20} color={t.muted} />
           </ActionCircle>
           <ActionCircle
-            label="Профиль"
+            label={tr("Профиль")}
             onPress={() => router.push(`/person/${current.id}`)}
           >
             <Ionicons name="person-outline" size={20} color={t.text} />
           </ActionCircle>
           <ActionCircle
-            label="Лайк"
+            label={tr("Лайк")}
             disabled={busy}
             onPress={() => void action("like")}
           >
@@ -331,14 +332,14 @@ export function FeedScreen({
       {confirm && (
         <Confirm
           title={
-            confirm === "pass" ? "Скрыть анкету?" : "Показать анкеты ещё раз?"
+            confirm === "pass" ? tr("Скрыть анкету?") : tr("Показать анкеты ещё раз?")
           }
           body={
             confirm === "pass"
-              ? "Анкета больше не появится в ленте. Вернуть её можно в архиве своих решений."
-              : "Ранее показанные анкеты снова появятся в ленте. Исключённые анкеты не вернутся; лайки и чаты сохранятся."
+              ? tr("Анкета больше не появится в ленте. Вернуть её можно в архиве своих решений.")
+              : tr("Ранее показанные анкеты снова появятся в ленте. Исключённые анкеты не вернутся; лайки и чаты сохранятся.")
           }
-          label={confirm === "pass" ? "Скрыть" : "Показать ещё раз"}
+          label={confirm === "pass" ? tr("Скрыть") : tr("Показать ещё раз")}
           busy={busy}
           onConfirm={() => void (confirm === "pass" ? action("pass") : reset())}
           onClose={() => !busy && setConfirm(null)}

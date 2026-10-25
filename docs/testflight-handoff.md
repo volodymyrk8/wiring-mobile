@@ -1,6 +1,6 @@
 # Передача Мише: iOS → TestFlight
 
-Мобильный репозиторий: https://github.com/volodymyrk8/wiring-mobile, ветка `codex/web-parity`, PR https://github.com/volodymyrk8/wiring-mobile/pull/1.
+Мобильный репозиторий: https://github.com/volodymyrk8/wiring-mobile, ветка для текущей сборки `codex/trello-bugs-oct24`.
 Сервер: https://github.com/volodymyrk8/wiring, ветка `codex/native-parity-api`, PR https://github.com/volodymyrk8/wiring/pull/6. PR 6 включает документацию из PR 5; отдельно повторно применять её не нужно.
 
 ## Сборка
@@ -12,7 +12,7 @@ Bundle ID: `date.wiring.app`, Apple Team: `G3T7684N3M`, версия: `1.0.0`. �
 ```sh
 git clone https://github.com/volodymyrk8/wiring-mobile.git
 cd wiring-mobile
-git checkout codex/web-parity
+git checkout codex/trello-bugs-oct24
 npm ci --legacy-peer-deps
 npm run typecheck
 npm run lint
@@ -20,10 +20,12 @@ npm test
 npx eas-cli@latest login
 npx eas-cli@latest init
 npx eas-cli@latest build --platform ios --profile testflight
-npx eas-cli@latest submit --platform ios --profile testflight --latest
+npx eas-cli@latest submit --platform ios --profile testflight --id <BUILD_ID>
 ```
 
 При `eas init` связать репозиторий с проектом команды, сохранить полученный `extra.eas.projectId` в app.json. Нужны доступ к Expo-проекту, Apple Developer и приложению в App Store Connect; EAS предложит выбрать сертификат и provisioning profile. Секреты и сертификаты в Git не коммитить. Для push настроить APNs в этом EAS-проекте.
+
+Иконка `assets/icon.png` обновлена из веб-исходника `scripts/make_icons.py`: знак W на тёмном фоне, 1024×1024 RGB без прозрачности. Она войдёт в новую нативную сборку; ранее установленная сборка её не получит через OTA. Локальные проверки: typecheck, lint и 25 тестов прошли. На этом хосте EAS не авторизован, `extra.eas.projectId` пока не задан; новая сборка ещё не запускалась.
 
 Профиль `testflight` обращается к `https://wiring.date`. До проверки новых OAuth, подтверждения почты, поддержки с bearer-токеном и Universal Links необходимо выложить серверный PR 6. Использовать обычную процедуру развёртывания сервера с резервной копией и обновлением схемы по его инструкциям. Провайдерские OAuth-настройки и HTTPS должны быть рабочими. Не использовать локальный HTTP-профиль `preview` для TestFlight.
 

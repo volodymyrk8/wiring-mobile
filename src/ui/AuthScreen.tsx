@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../i18n";
 import { consumeDestination } from "../routes";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -12,6 +13,7 @@ export function AuthScreen({
 }: {
   mode: "login" | "register" | "forgot" | "reset" | "verify";
 }) {
+  useLanguage();
   const router = useRouter();
   const params = useLocalSearchParams<{
     email?: string;
@@ -60,21 +62,21 @@ export function AuthScreen({
       mode !== "verify" &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
     ) {
-      setError("Проверь правильность адреса почты");
+      setError(tr("Проверь правильность адреса почты"));
       return;
     }
     if (
       (mode === "login" || mode === "register" || mode === "reset") &&
       password.length < 6
     ) {
-      setError("Пароль должен содержать минимум 6 символов");
+      setError(tr("Пароль должен содержать минимум 6 символов"));
       return;
     }
     if (
       mode === "register" &&
       (name.trim().length < 2 || name.trim().length > 32 || !adult || !privacy)
     ) {
-      setError("Укажи имя, подтверди 18+ и согласие с правилами");
+      setError(tr("Укажи имя, подтверди 18+ и согласие с правилами"));
       return;
     }
     setBusy(true);
@@ -93,7 +95,7 @@ export function AuthScreen({
         await endpoints.forgot(email);
         setDone(true);
       } else if (mode === "reset") {
-        if (!token) throw new Error("Открой ссылку из письма");
+        if (!token) throw new Error(tr("Открой ссылку из письма"));
         await endpoints.resetPassword(token, password);
         setDone(true);
       } else {
@@ -108,18 +110,18 @@ export function AuthScreen({
         });
       } else
         setError(
-          e instanceof Error ? e.message : "Не получилось, попробуй ещё раз",
+          e instanceof Error ? e.message : tr("Не получилось, попробуй ещё раз"),
         );
     } finally {
       setBusy(false);
     }
   };
   const titles = {
-    login: "Войти",
-    register: "Создать профиль",
-    forgot: "Забыли пароль",
-    reset: "Новый пароль",
-    verify: "Подтверди почту",
+    login: tr("Войти"),
+    register: tr("Создать профиль"),
+    forgot: tr("Забыли пароль"),
+    reset: tr("Новый пароль"),
+    verify: tr("Подтверди почту"),
   };
   return (
     <Page title={titles[mode]}>
@@ -129,22 +131,20 @@ export function AuthScreen({
           <>
             <Hint>
               {mode === "reset"
-                ? "Пароль изменён. Войди с новым паролем."
-                : "Письмо отправлено. Проверь почту и папку «Спам»."}
+                ? tr("Пароль изменён. Войди с новым паролем.")
+                : tr("Письмо отправлено. Проверь почту и папку «Спам».")}
             </Hint>
-            <Button title="Войти" onPress={() => router.push("/login")} />
+            <Button title={tr("Войти")} onPress={() => router.push("/login")} />
           </>
         ) : (
           <>
             {mode === "verify" && (
               <Hint>
-                Мы отправили ссылку для подтверждения почты. Открой её на этом
-                устройстве.
-              </Hint>
+                {tr("Мы отправили ссылку для подтверждения почты. Открой её на этом устройстве.")}</Hint>
             )}
             {mode === "register" && (
               <Field
-                label="Имя"
+                label={tr("Имя")}
                 value={name}
                 onChangeText={setName}
                 maxLength={32}
@@ -153,7 +153,7 @@ export function AuthScreen({
             )}
             {mode !== "reset" && (
               <Field
-                label="Почта"
+                label={tr("Почта")}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -163,7 +163,7 @@ export function AuthScreen({
             )}
             {["login", "register", "reset"].includes(mode) && (
               <Field
-                label="Пароль"
+                label={tr("Пароль")}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -177,12 +177,12 @@ export function AuthScreen({
                 <Check
                   checked={adult}
                   onChange={setAdult}
-                  label="Мне есть 18 лет"
+                  label={tr("Мне есть 18 лет")}
                 />
                 <Check
                   checked={privacy}
                   onChange={setPrivacy}
-                  label="Согласен(на) с правилами и политикой конфиденциальности"
+                  label={tr("Согласен(на) с правилами и политикой конфиденциальности")}
                 />
               </>
             )}
@@ -190,9 +190,9 @@ export function AuthScreen({
             <Button
               title={
                 mode === "verify"
-                  ? "Отправить письмо ещё раз"
+                  ? tr("Отправить письмо ещё раз")
                   : mode === "forgot"
-                    ? "Отправить ссылку"
+                    ? tr("Отправить ссылку")
                     : titles[mode]
               }
               onPress={() => void submit()}
@@ -210,12 +210,12 @@ export function AuthScreen({
         {mode === "login" && (
           <>
             <Button
-              title="Забыли пароль?"
+              title={tr("Забыли пароль?")}
               kind="ghost"
               onPress={() => router.push("/forgot")}
             />
             <Button
-              title="Нет профиля? Создать профиль"
+              title={tr("Нет профиля? Создать профиль")}
               kind="ghost"
               onPress={() => router.push("/register")}
             />
@@ -223,7 +223,7 @@ export function AuthScreen({
         )}
         {mode === "register" && (
           <Button
-            title="Уже есть профиль? Войти"
+            title={tr("Уже есть профиль? Войти")}
             kind="ghost"
             onPress={() => router.push("/login")}
           />

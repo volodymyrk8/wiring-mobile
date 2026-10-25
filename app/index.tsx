@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../src/i18n";
 import { useRouter } from "expo-router";
 import { Pressable, View, useWindowDimensions } from "react-native";
 import { useAuth } from "../src/auth";
@@ -6,6 +7,7 @@ import { Button } from "../src/ui/kit";
 import { Page } from "../src/ui/Page";
 import { Text, fonts } from "../src/ui/Typography";
 export default function Home() {
+  useLanguage();
   const { user } = useAuth();
   const router = useRouter();
   const t = useTheme();
@@ -35,10 +37,8 @@ export default function Home() {
           }}
         >
           <Text style={{ color: t.accent, fontFamily: fonts.serifBold }}>
-            Отличные
-          </Text>{" "}
-          люди рядом
-        </Text>
+            {tr("Отличные")}</Text>{" "}
+          {tr("люди рядом")}</Text>
         <Text
           style={{
             color: t.muted,
@@ -47,11 +47,10 @@ export default function Home() {
             lineHeight: 22,
           }}
         >
-          Знакомства для нейроотличных
-        </Text>
+          {tr("Знакомства для нейроотличных")}</Text>
       </View>
       <Button
-        title={user ? "Показать ленту" : "Создать профиль"}
+        title={user ? tr("Показать ленту") : tr("Создать профиль")}
         onPress={() => router.push(user ? "/(tabs)/feed" : "/register")}
       />
       {!user && (
@@ -65,8 +64,7 @@ export default function Home() {
           }}
         >
           <Text style={{ color: t.muted, fontSize: 15 }}>
-            Уже есть профиль?
-          </Text>
+            {tr("Уже есть профиль?")}</Text>
           <Pressable
             accessibilityRole="link"
             onPress={() => router.push("/login")}
@@ -74,39 +72,30 @@ export default function Home() {
             <Text
               style={{ color: t.text, fontFamily: fonts.bold, fontSize: 15 }}
             >
-              Войти
-            </Text>
+              {tr("Войти")}</Text>
           </Pressable>
         </View>
       )}
       <View style={{ marginTop: 16 }}>
         <View style={frame}>
           <Text style={body}>
-            Мы нейроотличные люди и делаем проект для таких же, как мы. Создаём
-            пространство для свободного и комфортного общения.
-          </Text>
+            {tr("Мы нейроотличные люди и делаем проект для таких же, как мы. Создаём пространство для свободного и комфортного общения.")}</Text>
           <Text style={{ color: t.muted, fontSize: 12.5, lineHeight: 19 }}>
-            <Text style={{ fontFamily: fonts.bold }}>Бета-версия.</Text>{" "}
-            Сообщайте в{" "}
+            <Text style={{ fontFamily: fonts.bold }}>{tr("Бета-версия.")}</Text>{" "}
+            {tr("Сообщайте в")}{" "}
             <Text
               accessibilityRole="link"
               onPress={() => router.push("/support")}
               style={{ color: t.text, textDecorationLine: "underline" }}
             >
-              поддержку
-            </Text>{" "}
-            о любых замечаниях, пожеланиях и улучшениях — мы внимательно и
-            оперативно обработаем и при необходимости дадим обратную связь.
-          </Text>
+              {tr("поддержку")}</Text>{" "}
+            {tr("о любых замечаниях, пожеланиях и улучшениях — мы внимательно и оперативно обработаем и при необходимости дадим обратную связь.")}</Text>
         </View>
         <View style={frame}>
           <Text style={body}>
             <Text style={{ color: t.accent, fontFamily: fonts.bold }}>
-              WIRING+ на 3 месяца.
-            </Text>{" "}
-            Каждому аккаунту — и тем, кто уже с нами, и всем, кто только
-            регистрируется. Спасибо, что помогаете тестировать бета.
-          </Text>
+              {tr("WIRING+ на 3 месяца.")}</Text>{" "}
+            {tr("Каждому аккаунту — и тем, кто уже с нами, и всем, кто только регистрируется. Спасибо, что помогаете тестировать бета.")}</Text>
           {user && (
             <Pressable
               accessibilityRole="link"
@@ -120,8 +109,7 @@ export default function Home() {
                   fontSize: 13,
                 }}
               >
-                Посмотреть в профиле
-              </Text>
+                {tr("Посмотреть в профиле")}</Text>
             </Pressable>
           )}
         </View>
@@ -134,8 +122,7 @@ export default function Home() {
             marginVertical: 20,
           }}
         >
-          Можно быть собой.
-        </Text>
+          {tr("Можно быть собой.")}</Text>
       </View>
     </Page>
   );

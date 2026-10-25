@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../../i18n";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
@@ -19,6 +20,7 @@ export function ProfileCard({
   height: number;
   recommendationSource?: string;
 }) {
+  useLanguage();
   const t = useTheme();
   const { user } = useAuth();
   const label = useTagLabel();
@@ -26,7 +28,7 @@ export function ProfileCard({
   const gender = catalog?.genders?.find(i => i.id === person.gender)?.label;
   const looking = catalog?.looking_for?.find(i => i.id === person.looking_for)?.label;
   const intents = (person.intents?.length ? person.intents : person.intent ? [person.intent] : []).map(label);
-  const open = person.gender === "woman" ? "открыта" : person.gender === "man" ? "открыт" : "открыто";
+  const open = person.gender === "woman" ? tr("открыта") : person.gender === "man" ? tr("открыт") : tr("открыто");
   const aspect = 0.75;
   const [page, setPage] = useState(0);
   const photos = person.photos?.length
@@ -63,7 +65,7 @@ export function ProfileCard({
             source={mediaSource(p)}
             contentFit="cover"
             style={{ width: w, height: h }}
-            accessibilityLabel={`Фото ${i + 1} из ${photos.length}: ${person.name}`}
+            accessibilityLabel={tr("Фото {0} из {1}: {2}", i + 1, photos.length, person.name)}
 
           />
         ))}
@@ -116,15 +118,14 @@ export function ProfileCard({
           style={{ fontSize: 12, color: t.onPhotoMuted, marginVertical: 4 }}
         >
           {[
-            person.city,
-            person.job,
-            person.height ? `${person.height} см` : "",
+            tr(person.city || ""),
+            person.height ? tr("{0} см", person.height) : "",
             !["hidden", "other", "nb"].includes(person.gender || "hidden") ? gender : "",
           ]
             .filter(Boolean)
             .join(" · ")}
           {"\n"}
-          {[looking ? `ищет ${looking}` : "", intents.length ? `${open} к: ${intents.join(", ")}` : ""].filter(Boolean).join(" · ")}
+          {[looking ? tr("ищет {0}", looking) : "", intents.length ? tr("{0} к: {1}", open, intents.join(", ")) : ""].filter(Boolean).join(" · ")}
         </Text>
         {!!person.bio && (
           <Text
@@ -166,11 +167,10 @@ export function ProfileCard({
           })}
         </View>
         {recommendationSource && <View style={{ gap: 4, marginTop: 8, backgroundColor: "#0008", padding: 8, borderRadius: 10 }}>
-          <Text style={{ color: t.onPhoto, fontSize: 13, fontWeight: "600" }}>Почему может подойти</Text>
+          <Text style={{ color: t.onPhoto, fontSize: 13, fontWeight: "600" }}>{tr("Почему может подойти")}</Text>
           <Text style={{ color: t.onPhoto, fontSize: 12, lineHeight: 17 }}>
-            {recommendationSource === "local" ? "Jev сейчас недоступен: порядок по совпадениям анкет. " : "Jev ранжирует предварительный список. "}
-            {person.recommendation_reasons?.join(". ")}. Это совпадения в анкетах, а не гарантия совместимости.
-          </Text>
+            {recommendationSource === "local" ? tr("Jev сейчас недоступен: порядок по совпадениям анкет. ") : tr("Jev ранжирует предварительный список. ")}
+            {person.recommendation_reasons?.join(". ")}{tr(". Это совпадения в анкетах, а не гарантия совместимости.")}</Text>
         </View>}
       </ScrollView>
       {photos.length > 1 && (
