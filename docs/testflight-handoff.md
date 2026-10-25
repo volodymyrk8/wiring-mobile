@@ -23,9 +23,21 @@ npx eas-cli@latest build --platform ios --profile testflight
 npx eas-cli@latest submit --platform ios --profile testflight --id <BUILD_ID>
 ```
 
-При `eas init` связать репозиторий с проектом команды, сохранить полученный `extra.eas.projectId` в app.json. Нужны доступ к Expo-проекту, Apple Developer и приложению в App Store Connect; EAS предложит выбрать сертификат и provisioning profile. Секреты и сертификаты в Git не коммитить. Для push настроить APNs в этом EAS-проекте.
+Репозиторий связан с `@wirings-team/wiring`, projectId `849a1504-0766-4b10-a065-bcd70d7dfd7e` сохранён в app.json. На другом хосте нужен вход в Expo с доступом к команде. Сертификат App Store и provisioning profile настроены в EAS для Apple Team `G3T7684N3M`. Секреты и сертификаты в Git не коммитить. APNs в этом EAS-проекте пока не настроен.
 
-Иконка `assets/icon.png` обновлена из веб-исходника `scripts/make_icons.py`: знак W на тёмном фоне, 1024×1024 RGB без прозрачности. Она войдёт в новую нативную сборку; ранее установленная сборка её не получит через OTA. Локальные проверки: typecheck, lint и 25 тестов прошли. На этом хосте EAS не авторизован, `extra.eas.projectId` пока не задан; новая сборка ещё не запускалась.
+Иконка `assets/icon.png` обновлена из веб-исходника `scripts/make_icons.py`: знак W на тёмном фоне, 1024×1024 RGB без прозрачности. Она войдёт в новую нативную сборку; ранее установленная сборка её не получит через OTA. Локальные проверки: typecheck, lint и 25 тестов прошли.
+
+25 октября 2026 локальная EAS-сборка №15 дошла до Release archive и завершилась с кодом 65 в `ExpoModulesJSI`: `RuntimeScheduler.h:53,61`, ошибка аннотаций `SWIFT_RETURNS_RETAINED` / `SWIFT_SHARED_REFERENCE` на Xcode 26.3 (Swift 6.2.4). Подпись, prebuild, CocoaPods и JS bundle прошли; IPA не создана, загрузки в TestFlight не было. Нужен Xcode 26.4+ и достаточно свободного места; во время неудачной попытки свободное место падало ниже 1 ГБ. Удалённый buildNumber уже 15, следующая попытка автоматически получит 16; в App Store Connect последняя найденная загруженная сборка — 13.
+
+Для локальной сборки после обновления Xcode установите Fastlane и CocoaPods, затем:
+
+```sh
+mkdir -p releases
+EXPO_NO_CAPABILITY_SYNC=1 npm_config_legacy_peer_deps=true npx eas-cli@latest build --platform ios --profile testflight --local --output ./releases/wiring-testflight.ipa
+npx eas-cli@latest submit --platform ios --profile testflight --path ./releases/wiring-testflight.ipa
+```
+
+`EXPO_NO_CAPABILITY_SYNC=1` сохраняет существующие Apple capabilities: синхронизация EAS пыталась отключить `APPLE_ID_AUTH` и получила ошибку Apple API. При повторном использовании проверенных remote credentials дополнительная Apple API-авторизация может не понадобиться; если EAS запросит её, используйте учётную запись Apple или локальный ASC API key через документированные переменные окружения. Никаких ключей в репозитории нет.
 
 Профиль `testflight` обращается к `https://wiring.date`. До проверки новых OAuth, подтверждения почты, поддержки с bearer-токеном и Universal Links необходимо выложить серверный PR 6. Использовать обычную процедуру развёртывания сервера с резервной копией и обновлением схемы по его инструкциям. Провайдерские OAuth-настройки и HTTPS должны быть рабочими. Не использовать локальный HTTP-профиль `preview` для TestFlight.
 
