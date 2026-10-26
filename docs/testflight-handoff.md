@@ -5,7 +5,7 @@
 
 ## Сборка
 
-Expo SDK 57 / React Native 0.86.3. Требуются iOS 16.4+ и Xcode 26.4+; профиль EAS `testflight` фиксирует Xcode 26.6. 26 октября 2026 локальная сборка 1.0.0 (18) успешно создана на macOS Tahoe 26.7.1 / Xcode 26.6 (17F113), iOS SDK 26.5. IPA отправлена напрямую в App Store Connect; Apple подтвердила загрузку без ошибок. Статус обработки и доступность тестировщикам проверяются отдельно.
+Expo SDK 57 / React Native 0.86.3. Требуются iOS 16.4+ и Xcode 26.4+; профиль EAS `testflight` фиксирует Xcode 26.6. 26 октября 2026 локальная сборка 1.0.0 (18) успешно создана на macOS Tahoe 26.7.1 / Xcode 26.6 (17F113), iOS SDK 26.5. IPA отправлена напрямую в App Store Connect; Apple подтвердила загрузку без ошибок. Apple завершила обработку: `processingState=VALID`, `internalBuildState=IN_BETA_TESTING`; сборка доступна во внутреннем TestFlight. Для внешнего тестирования состояние — `READY_FOR_BETA_SUBMISSION`, Beta App Review ещё не отправлен. Delivery/build ID: `589d12c7-19c7-4f92-b249-6a045bc3d2e1`.
 
 Bundle ID: `date.wiring.app`, Apple Team: `G3T7684N3M`, версия: `1.0.0`. В app.json buildNumber `4`; EAS использует удалённую нумерацию и autoIncrement. Перед загрузкой проверить, что следующий номер выше уже загруженных сборок App Store Connect.
 
