@@ -1,52 +1,44 @@
 # Передача Мише: iOS → TestFlight
 
-Мобильный репозиторий: https://github.com/volodymyrk8/wiring-mobile, ветка для текущей сборки `codex/trello-bugs-oct24`.
-Сервер: https://github.com/volodymyrk8/wiring, ветка `codex/native-parity-api`, PR https://github.com/volodymyrk8/wiring/pull/6. PR 6 включает документацию из PR 5; отдельно повторно применять её не нужно.
+Мобильный репозиторий: https://github.com/volodymyrk8/wiring-mobile, актуальная ветка `main`.
+Сервер: https://github.com/volodymyrk8/wiring, `main`. Первичное заполнение и свободный выбор изображения выложены в production через https://github.com/volodymyrk8/wiring/pull/14; мобильные изменения — https://github.com/volodymyrk8/wiring-mobile/pull/6.
 
-## Сборка
+## Последний выпуск
 
-Expo SDK 57 / React Native 0.86.3. Требуются iOS 16.4+ и Xcode 26.4+; профиль EAS `testflight` фиксирует Xcode 26.6. 26 октября 2026 локальная сборка 1.0.0 (18) успешно создана на macOS Tahoe 26.7.1 / Xcode 26.6 (17F113), iOS SDK 26.5. IPA отправлена напрямую в App Store Connect; Apple подтвердила загрузку без ошибок. Apple завершила обработку: `processingState=VALID`, `internalBuildState=IN_BETA_TESTING`; сборка доступна во внутреннем TestFlight. Сборка также добавлена во внешнюю группу Friends с Леной и остальными тестировщиками; заявка Beta App Review отправлена. После отправки API вернул `externalBuildState=IN_BETA_TESTING`, автоматические уведомления включены. Delivery/build ID: `589d12c7-19c7-4f92-b249-6a045bc3d2e1`.
+26 октября 2026 локально собрана и выпущена **1.0.0 (19)**. Среда: macOS Tahoe 26.7.1, Xcode 26.6 (17F113), iOS SDK 26.5, Expo SDK 57 / React Native 0.86.3. Поддерживаются iOS 16.4+.
 
-Bundle ID: `date.wiring.app`, Apple Team: `G3T7684N3M`, версия: `1.0.0`. В app.json buildNumber `4`; EAS использует удалённую нумерацию и autoIncrement. Перед загрузкой проверить, что следующий номер выше уже загруженных сборок App Store Connect.
+IPA `releases/wiring-testflight19.ipa` (24,2 МБ) подписана для `date.wiring.app`, Apple Team `G3T7684N3M`, и отправлена напрямую в App Store Connect. Apple подтвердила загрузку без ошибок, `processingState=VALID`, Beta App Review — `APPROVED`, внутреннее и внешнее состояния — `IN_BETA_TESTING`. Сборка подтверждена в группе **Friends** с Леной и остальными внешними тестировщиками; `autoNotifyEnabled=true`. Delivery/build ID: `e70593f5-b26e-4ca1-89de-9428dcb66798`.
+
+Сборка 19 добавляет обязательный короткий экран имени, возраста и изображения без выдуманных «Участник/18». Черновики и загрузка картинки не публикуют анкету; публикация выполняется отдельной кнопкой. Галочка «только свои фото» убрана: можно использовать фото, рисунок или мем. Модерация изображений и отдельное согласие на выбранные особенности сохраняются. Общая W-иконка сайта, RU/EN и предыдущие исправления чата также входят в сборку.
+
+**Каждый новый выпуск добавлять во внешнюю группу Friends**, отправлять на Beta App Review и проверять доступность внешним тестировщикам. Успешная загрузка IPA и внутренний TestFlight сами по себе не доставляют обновление Лене. Публикация в App Store — отдельный процесс.
+
+## Повторная локальная сборка
+
+Проект связан с `@wirings-team/wiring`, projectId `849a1504-0766-4b10-a065-bcd70d7dfd7e`. Профиль `testflight` фиксирует Xcode 26.6 для облака; локально используется выбранный Xcode. Удалённый buildNumber — 19, следующий запуск с autoIncrement получит 20; `ios.buildNumber` в app.json не определяет номер EAS-сборки.
 
 ```sh
-git clone https://github.com/volodymyrk8/wiring-mobile.git
-cd wiring-mobile
-git checkout codex/trello-bugs-oct24
-npm ci --legacy-peer-deps
+git checkout main
+npm ci --legacy-peer-deps --prefer-offline
 npm run typecheck
 npm run lint
 npm test
-npx eas-cli@latest login
-npx eas-cli@latest init
-npx eas-cli@latest build --platform ios --profile testflight
-npx eas-cli@latest submit --platform ios --profile testflight --id <BUILD_ID>
-```
-
-Репозиторий связан с `@wirings-team/wiring`, projectId `849a1504-0766-4b10-a065-bcd70d7dfd7e` сохранён в app.json. На другом хосте нужен вход в Expo с доступом к команде. Сертификат App Store и provisioning profile настроены в EAS для Apple Team `G3T7684N3M`. Секреты и сертификаты в Git не коммитить. APNs в этом EAS-проекте пока не настроен.
-
-Иконка `assets/icon.png` обновлена из веб-исходника `scripts/make_icons.py`: знак W на тёмном фоне, 1024×1024 RGB без прозрачности. Она проверена внутри IPA №18; ранее установленная сборка её не получит через OTA. Локальные проверки: typecheck, lint и 25 тестов прошли.
-
-Предыдущая попытка №15 на Xcode 26.3 завершилась ошибкой Swift/C++ в `ExpoModulesJSI`; Xcode 26.6 устранил её. Попытки №16–17 остановились до компиляции из-за отсутствующей iOS-платформы. После установки iOS 26.5 через Xcode → Settings → Components проверка Release destination и архивирование №18 прошли. Одного наличия iOS SDK в `xcodebuild -showsdks` для проверки готовности оказалось недостаточно. Удалённый buildNumber — 18, следующий запуск с autoIncrement получит 19.
-
-Для локальной сборки нужны Fastlane, CocoaPods и выбранный Xcode с установленной iOS-платформой. При медленном интернете сохраняйте npm/ReactNative/CocoaPods-кэши; `npm_config_prefer_offline=true` предпочитает скачанные зависимости. Вход, проверка signing credentials и отправка IPA требуют сети. Затем:
-
-```sh
 mkdir -p releases
 EXPO_NO_CAPABILITY_SYNC=1 npm_config_legacy_peer_deps=true npm_config_prefer_offline=true npx eas-cli@latest build --platform ios --profile testflight --local --output ./releases/wiring-testflight.ipa
-npx eas-cli@latest submit --platform ios --profile testflight --path ./releases/wiring-testflight.ipa
 ```
 
-`EXPO_NO_CAPABILITY_SYNC=1` сохраняет существующие Apple capabilities: синхронизация EAS пыталась отключить `APPLE_ID_AUTH` и получила ошибку Apple API. При повторном использовании проверенных remote credentials дополнительная Apple API-авторизация может не понадобиться; если EAS запросит её, используйте учётную запись Apple или локальный ASC API key через документированные переменные окружения. Никаких ключей в репозитории нет.
+Нужны доступ к команде Expo, Fastlane, CocoaPods, Xcode с установленной iOS-платформой и свободное место. При медленном интернете сохраняйте npm/ReactNative/CocoaPods-кэши. Вход, проверка signing credentials и отправка IPA требуют сети. Для отправки доступны EAS Submit либо прямая загрузка Apple `xcrun altool` с собственным ASC API key; прямая загрузка не передаёт IPA через сервер Expo. После загрузки выполнить внешнее распространение, описанное выше.
 
-Профиль `testflight` обращается к `https://wiring.date`. До проверки новых OAuth, подтверждения почты, поддержки с bearer-токеном и Universal Links необходимо выложить серверный PR 6. Использовать обычную процедуру развёртывания сервера с резервной копией и обновлением схемы по его инструкциям. Провайдерские OAuth-настройки и HTTPS должны быть рабочими. Не использовать локальный HTTP-профиль `preview` для TestFlight.
+`EXPO_NO_CAPABILITY_SYNC=1` сохраняет существующие Apple capabilities: прежняя синхронизация EAS пыталась отключить `APPLE_ID_AUTH`. Сертификат и provisioning profile настроены в EAS. Секреты и сертификаты не хранить в Git. APNs в EAS-проекте пока не настроен; уведомления TestFlight от Apple не подтверждают работу push внутри приложения.
 
-После обработки сборки в App Store Connect добавить её в нужную группу TestFlight. Для внешних тестировщиков может потребоваться Beta App Review. Это передача для тестирования; публикация в App Store отдельная.
+Профиль задаёт `https://wiring.date`; конфигурация нормализует прежний адрес к `https://wiring.club`. Не использовать локальный HTTP-профиль `preview` для TestFlight. Сервер с `needs_profile_setup` и отменённым требованием own-photo checkbox уже выложен перед сборкой 19.
 
-## Проверка и материалы
+История подготовки: Xcode 26.3 давал ошибку Swift/C++ в ExpoModulesJSI (попытка 15). Попытки 16–17 остановились из-за отсутствующей iOS-платформы; после установки через Xcode → Settings → Components сборки 18 и 19 прошли. Одного `xcodebuild -showsdks` недостаточно для проверки готовности — Release destination также должен быть доступен.
 
-TypeScript, lint и 25 модульных тестов прошли перед локальной сборкой №18. Ранее выполнены экспорты Hermes для обеих платформ и серверные тесты. На iOS в Expo Go проверены вход локальным аккаунтом, лента, повторный показ, список чатов, поиск и открытие переписки. Исправлена ошибка обращения к уже освобождённому аудио-рекордеру при закрытии экрана.
+## Проверки и материалы
 
-Скриншоты: [iOS](screenshots/web-parity/ios/) и [сайт](screenshots/web-parity/web/). Синяя кнопка поверх iOS-экранов принадлежит Expo Go и не входит в интерфейс приложения. Полная матрица: [web-parity.md](web-parity.md). Android отложен по просьбе владельца.
+Перед выпуском прошли 199 серверных Python-тестов, web typecheck/build/router/i18n/profile autosave, браузерный сценарий первого заполнения на мобильной ширине, а также mobile typecheck/lint и 25 тестов. Production CI и deploy завершились успешно; публичные health, каталог и новый profile bundle проверены без production-аккаунтов.
 
-В подписанной сборке на iPhone проверить вход и восстановление сессии, like → match → чат, отправку текста/фото/голоса, разрешения камеры/микрофона, фон/возврат, OAuth, push и Universal Links. Полная проверка всех страниц и физических устройств пока не завершена.
+Физический iPhone с новой сборкой в этой проверке не использовался. Проверка всех экранов, VoiceOver, разрешений, реальных OAuth/push и Universal Links остаётся отдельной приёмкой. Android-релиз отложен по просьбе владельца.
+
+Скриншоты прошлой проверки: [iOS](screenshots/web-parity/ios/) и [сайт](screenshots/web-parity/web/). Синяя кнопка поверх iOS-экранов принадлежит Expo Go, а не приложению. [Матрица соответствия](web-parity.md).
