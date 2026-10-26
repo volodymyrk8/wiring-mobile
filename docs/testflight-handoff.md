@@ -5,7 +5,7 @@
 
 ## Сборка
 
-Expo SDK 57 / React Native 0.86.3. Требуются iOS 16.4+ и Xcode 26.4+; профиль EAS `testflight` фиксирует Xcode 26.6. Локально установлен Xcode 26.3, поэтому новая IPA здесь не собрана и в TestFlight не загружена.
+Expo SDK 57 / React Native 0.86.3. Требуются iOS 16.4+ и Xcode 26.4+; профиль EAS `testflight` фиксирует Xcode 26.6. 26 октября 2026 локальная сборка 1.0.0 (18) успешно создана на macOS Tahoe 26.7.1 / Xcode 26.6 (17F113), iOS SDK 26.5. IPA отправлена напрямую в App Store Connect; Apple подтвердила загрузку без ошибок. Статус обработки и доступность тестировщикам проверяются отдельно.
 
 Bundle ID: `date.wiring.app`, Apple Team: `G3T7684N3M`, версия: `1.0.0`. В app.json buildNumber `4`; EAS использует удалённую нумерацию и autoIncrement. Перед загрузкой проверить, что следующий номер выше уже загруженных сборок App Store Connect.
 
@@ -25,15 +25,15 @@ npx eas-cli@latest submit --platform ios --profile testflight --id <BUILD_ID>
 
 Репозиторий связан с `@wirings-team/wiring`, projectId `849a1504-0766-4b10-a065-bcd70d7dfd7e` сохранён в app.json. На другом хосте нужен вход в Expo с доступом к команде. Сертификат App Store и provisioning profile настроены в EAS для Apple Team `G3T7684N3M`. Секреты и сертификаты в Git не коммитить. APNs в этом EAS-проекте пока не настроен.
 
-Иконка `assets/icon.png` обновлена из веб-исходника `scripts/make_icons.py`: знак W на тёмном фоне, 1024×1024 RGB без прозрачности. Она войдёт в новую нативную сборку; ранее установленная сборка её не получит через OTA. Локальные проверки: typecheck, lint и 25 тестов прошли.
+Иконка `assets/icon.png` обновлена из веб-исходника `scripts/make_icons.py`: знак W на тёмном фоне, 1024×1024 RGB без прозрачности. Она проверена внутри IPA №18; ранее установленная сборка её не получит через OTA. Локальные проверки: typecheck, lint и 25 тестов прошли.
 
-25 октября 2026 локальная EAS-сборка №15 дошла до Release archive и завершилась с кодом 65 в `ExpoModulesJSI`: `RuntimeScheduler.h:53,61`, ошибка аннотаций `SWIFT_RETURNS_RETAINED` / `SWIFT_SHARED_REFERENCE` на Xcode 26.3 (Swift 6.2.4). Подпись, prebuild, CocoaPods и JS bundle прошли; IPA не создана, загрузки в TestFlight не было. Нужен Xcode 26.4+ и достаточно свободного места; во время неудачной попытки свободное место падало ниже 1 ГБ. Удалённый buildNumber уже 15, следующая попытка автоматически получит 16; в App Store Connect последняя найденная загруженная сборка — 13.
+Предыдущая попытка №15 на Xcode 26.3 завершилась ошибкой Swift/C++ в `ExpoModulesJSI`; Xcode 26.6 устранил её. Попытки №16–17 остановились до компиляции из-за отсутствующей iOS-платформы. После установки iOS 26.5 через Xcode → Settings → Components проверка Release destination и архивирование №18 прошли. Одного наличия iOS SDK в `xcodebuild -showsdks` для проверки готовности оказалось недостаточно. Удалённый buildNumber — 18, следующий запуск с autoIncrement получит 19.
 
-Для локальной сборки после обновления Xcode установите Fastlane и CocoaPods, затем:
+Для локальной сборки нужны Fastlane, CocoaPods и выбранный Xcode с установленной iOS-платформой. При медленном интернете сохраняйте npm/ReactNative/CocoaPods-кэши; `npm_config_prefer_offline=true` предпочитает скачанные зависимости. Вход, проверка signing credentials и отправка IPA требуют сети. Затем:
 
 ```sh
 mkdir -p releases
-EXPO_NO_CAPABILITY_SYNC=1 npm_config_legacy_peer_deps=true npx eas-cli@latest build --platform ios --profile testflight --local --output ./releases/wiring-testflight.ipa
+EXPO_NO_CAPABILITY_SYNC=1 npm_config_legacy_peer_deps=true npm_config_prefer_offline=true npx eas-cli@latest build --platform ios --profile testflight --local --output ./releases/wiring-testflight.ipa
 npx eas-cli@latest submit --platform ios --profile testflight --path ./releases/wiring-testflight.ipa
 ```
 
@@ -45,7 +45,7 @@ npx eas-cli@latest submit --platform ios --profile testflight --path ./releases/
 
 ## Проверка и материалы
 
-TypeScript, lint и 24 модульных теста проверяются перед пушем. Ранее выполнены экспорты Hermes для обеих платформ и серверные тесты. На iOS в Expo Go проверены вход локальным аккаунтом, лента, повторный показ, список чатов, поиск и открытие переписки. Исправлена ошибка обращения к уже освобождённому аудио-рекордеру при закрытии экрана.
+TypeScript, lint и 25 модульных тестов прошли перед локальной сборкой №18. Ранее выполнены экспорты Hermes для обеих платформ и серверные тесты. На iOS в Expo Go проверены вход локальным аккаунтом, лента, повторный показ, список чатов, поиск и открытие переписки. Исправлена ошибка обращения к уже освобождённому аудио-рекордеру при закрытии экрана.
 
 Скриншоты: [iOS](screenshots/web-parity/ios/) и [сайт](screenshots/web-parity/web/). Синяя кнопка поверх iOS-экранов принадлежит Expo Go и не входит в интерфейс приложения. Полная матрица: [web-parity.md](web-parity.md). Android отложен по просьбе владельца.
 
