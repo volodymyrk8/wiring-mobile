@@ -1,3 +1,4 @@
+import { tr } from "./i18n";
 import { nativeRoute } from "./routes";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
@@ -28,8 +29,8 @@ const projectId = (): string | undefined =>
 
 /** Why push cannot work in this build/device, or null when it can. Shown instead of an error. */
 export function pushUnavailableReason(): string | null {
-  if (!Device.isDevice) return "Работает только на настоящем телефоне";
-  if (!projectId()) return "Появится в одной из следующих сборок";
+  if (!Device.isDevice) return tr("Работает только на настоящем телефоне");
+  if (!projectId()) return tr("Появится в одной из следующих сборок");
   return null;
 }
 
@@ -64,7 +65,7 @@ export async function enablePush(): Promise<Me> {
   if (status !== "granted")
     status = (await Notifications.requestPermissionsAsync()).status;
   if (status !== "granted")
-    throw new Error("Уведомления запрещены в настройках телефона");
+    throw new Error(tr("Уведомления запрещены в настройках телефона"));
   const token = (
     await Notifications.getExpoPushTokenAsync({ projectId: projectId() })
   ).data;

@@ -12,7 +12,7 @@ export const LIKES_SORT_OPTIONS: { id: LikesSort; label: string }[] = [
   { id: "age_desc", label: "Старше" },
 ];
 
-export function sortLikeCards(cards: LikeCard[], sort: LikesSort): LikeCard[] {
+export function sortLikeCards(cards: LikeCard[], sort: LikesSort, locale = "ru"): LikeCard[] {
   const hidden = cards.filter((card) => card.hidden);
   const visible = cards.filter((card) => !card.hidden);
   const sorted = [...visible];
@@ -23,7 +23,7 @@ export function sortLikeCards(cards: LikeCard[], sort: LikesSort): LikeCard[] {
       break;
     case "name":
       sorted.sort((a, b) =>
-        String(a.name || "").localeCompare(String(b.name || ""), "ru"),
+        String(a.name || "").localeCompare(String(b.name || ""), locale),
       );
       break;
     case "age_asc":

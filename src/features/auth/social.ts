@@ -1,3 +1,4 @@
+import { tr } from "../../i18n";
 import * as Crypto from "expo-crypto";
 import * as WebBrowser from "expo-web-browser";
 import { api } from "../../api/client";
@@ -45,11 +46,11 @@ export async function socialLogin(
     url.hostname !== "oauth" ||
     url.searchParams.get("state") !== state
   )
-    throw new Error("Не удалось проверить ответ входа. Попробуй снова.");
+    throw new Error(tr("Не удалось проверить ответ входа. Попробуй снова."));
   if (url.searchParams.has("error"))
-    throw new Error(url.searchParams.get("error") || "Вход отменён");
+    throw new Error(url.searchParams.get("error") || tr("Вход отменён"));
   const code = url.searchParams.get("code");
-  if (!code) throw new Error("Сервис входа не передал подтверждение");
+  if (!code) throw new Error(tr("Сервис входа не передал подтверждение"));
   return api<Session>("/api/auth/native/exchange", {
     method: "POST",
     body: JSON.stringify({ code, code_verifier: verifier }),

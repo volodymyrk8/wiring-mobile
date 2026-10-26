@@ -1,3 +1,4 @@
+import { tr, getLocale, useLanguage } from "../../src/i18n";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -31,7 +32,7 @@ import { Text, fonts } from "../../src/ui/Typography";
 
 type Pending = { cid: string; body: string; reply?: number; failed: boolean };
 const time = (ts: number) =>
-  new Date(ts * 1000).toLocaleTimeString("ru-RU", {
+  new Date(ts * 1000).toLocaleTimeString(getLocale(), {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -40,6 +41,7 @@ export default function ChatScreen() {
   return <ChatThreadScreen key={peerId} peerId={peerId} />;
 }
 function ChatThreadScreen({ peerId }: { peerId: number }) {
+  useLanguage();
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -76,7 +78,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
       }
     } catch (e) {
       if (active.current && sequence.current === seq && request === pollRequest.current)
-        setError(e instanceof Error ? e.message : "Чат недоступен");
+        setError(e instanceof Error ? e.message : tr("Чат недоступен"));
     }
   }, [peerId]);
   useFocusEffect(
@@ -120,7 +122,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
         setPending((p) =>
           p.map((v) => (v.cid === item.cid ? { ...v, failed: true } : v)),
         );
-        setError(e instanceof Error ? e.message : "Не отправлено");
+        setError(e instanceof Error ? e.message : tr("Не отправлено"));
       }
     }
   };
@@ -157,7 +159,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
       setReply(null);
       await poll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Фото не отправлено");
+      setError(e instanceof Error ? e.message : tr("Фото не отправлено"));
     } finally {
       if (active.current) setBusy(false);
     }
@@ -183,7 +185,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
         }
       } catch (e) {
         if (active.current)
-          setError(e instanceof Error ? e.message : "Запись не отправлена");
+          setError(e instanceof Error ? e.message : tr("Запись не отправлена"));
       } finally {
         stopping.current = false;
         if (active.current) setBusy(false);
@@ -201,7 +203,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
     const sub = AppState.addEventListener("change", (state) => {
       if (state !== "active" && recorder.isRecording) {
         void finishVoice(false);
-        setError("Запись отменена при уходе с экрана. Запиши сообщение ещё раз.");
+        setError(tr("Запись отменена при уходе с экрана. Запиши сообщение ещё раз."));
       }
     });
     return () => sub.remove();
@@ -212,7 +214,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
     try {
       const permission = await AudioModule.requestRecordingPermissionsAsync();
       if (!permission.granted) {
-        setError("Разреши доступ к микрофону в настройках телефона");
+        setError(tr("Разреши доступ к микрофону в настройках телефона"));
         return;
       }
       await setAudioModeAsync({
@@ -223,7 +225,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
       if (active.current && AppState.currentState === "active") recorder.record();
       else await setAudioModeAsync({ allowsRecording: false });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось начать запись");
+      setError(e instanceof Error ? e.message : tr("Не удалось начать запись"));
     } finally {
       if (active.current) setBusy(false);
     }
@@ -240,7 +242,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
       setDeleting(null);
       await poll();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не получилось");
+      setError(e instanceof Error ? e.message : tr("Не получилось"));
     } finally {
       if (active.current) setBusy(false);
     }
@@ -254,7 +256,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
       style={{ flex: 1, backgroundColor: t.bg }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <Header title="Чат" back />
+      <Header title={tr("Чат")} back />
       <Column>
         {peer && (
           <Pressable
@@ -280,7 +282,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
                 {peer.name}
               </Text>
               <Text style={{ color: t.muted, fontSize: 12 }}>
-                {peer.online ? "в сети" : "Профиль и безопасность"}
+                {peer.online ? tr("в сети") : tr("Профиль и безопасность")}
               </Text>
             </View>
           </Pressable>
@@ -321,8 +323,8 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
                       }}
                     >
                       {item.failed
-                        ? "Не отправлено · повторить"
-                        : "Отправляется…"}
+                        ? tr("Не отправлено · повторить")
+                        : tr("Отправляется…")}
                     </Text>
                   </Pressable>
                 );
@@ -330,7 +332,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
               return (
                 <Pressable
                   onLongPress={() => setSelected(item)}
-                  accessibilityHint="Удерживай, чтобы ответить или изменить сообщение"
+                  accessibilityHint={tr("Удерживай, чтобы ответить или изменить сообщение")}
                   style={{
                     alignSelf: mine ? "flex-end" : "flex-start",
                     maxWidth: "85%",
@@ -354,13 +356,13 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
                       }}
                     >
                       {item.reply_to.gone
-                        ? "Сообщение удалено"
+                        ? tr("Сообщение удалено")
                         : item.reply_to.body ||
-                          (item.reply_to.has_photo ? "Фото" : "Голосовое")}
+                          (item.reply_to.has_photo ? tr("Фото") : tr("Голосовое"))}
                     </Text>
                   )}
                   {(item.photo_urls?.length ? item.photo_urls : item.photo_url ? [item.photo_url] : []).map((src) => (
-                    <Pressable key={src} accessibilityLabel="Открыть фото" onPress={() => setPhoto(src)}>
+                    <Pressable key={src} accessibilityLabel={tr("Открыть фото")} onPress={() => setPhoto(src)}>
                       <Image source={mediaSource(src)} style={{ width: 220, height: 220, borderRadius: 10, marginBottom: 4 }} contentFit="cover" />
                     </Pressable>
                   ))}
@@ -380,9 +382,9 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
                       marginTop: 5,
                     }}
                   >
-                    {item.edited ? "изменено · " : ""}
+                    {item.edited ? tr("изменено · ") : ""}
                     {time(item.created_at)}
-                    {mine ? (item.read ? " · прочитано" : " · отправлено") : ""}
+                    {mine ? (item.read ? tr(" · прочитано") : tr(" · отправлено")) : ""}
                   </Text>
                 </Pressable>
               );
@@ -390,7 +392,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
             ListFooterComponent={
               !messages.length && openers.length ? (
                 <View style={{ gap: 8, paddingVertical: 10 }}>
-                  <Hint>Можно начать так</Hint>
+                  <Hint>{tr("Можно начать так")}</Hint>
                   {openers.map((o) => (
                     <Button
                       key={o}
@@ -410,7 +412,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
             style={{ flexDirection: "row", paddingHorizontal: 16, gap: 12 }}
           >
             <Text style={{ flex: 1, color: t.muted }} numberOfLines={2}>
-              Ответ: {reply.body || (reply.photo_url ? "Фото" : "Голосовое")}
+              {tr("Ответ: ")}{reply.body || (reply.photo_url ? tr("Фото") : tr("Голосовое"))}
             </Text>
             <Button title="×" kind="ghost" onPress={() => setReply(null)} />
           </View>
@@ -427,17 +429,17 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
           {recording.isRecording ? (
             <View style={{ gap: 8 }}>
               <Text style={{ color: t.danger }}>
-                Запись · {Math.floor(recording.durationMillis / 1000)} / 90 c
+                {tr("Запись · ")}{Math.floor(recording.durationMillis / 1000)} / 90 c
               </Text>
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <Button
-                  title="Отменить"
+                  title={tr("Отменить")}
                   kind="ghost"
                   busy={busy}
                   onPress={() => void finishVoice(false)}
                 />
                 <Button
-                  title="Отправить запись"
+                  title={tr("Отправить запись")}
                   busy={busy}
                   onPress={() => void finishVoice(true)}
                 />
@@ -448,7 +450,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
               style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}
             >
               <Pressable
-                accessibilityLabel="Отправить фото"
+                accessibilityLabel={tr("Отправить фото")}
                 disabled={busy}
                 onPress={() => void sendPhoto()}
                 style={{ padding: 10 }}
@@ -456,10 +458,10 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
                 <Ionicons name="image-outline" size={23} color={t.text} />
               </Pressable>
               <TextInput
-                accessibilityLabel="Сообщение"
+                accessibilityLabel={tr("Сообщение")}
                 value={text}
                 onChangeText={setText}
-                placeholder="Сообщение"
+                placeholder={tr("Сообщение")}
                 placeholderTextColor={t.muted}
                 maxLength={1000}
                 multiline
@@ -479,7 +481,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
               />
               <Pressable
                 accessibilityLabel={
-                  text.trim() ? "Отправить" : "Записать голосовое"
+                  text.trim() ? tr("Отправить") : tr("Записать голосовое")
                 }
                 disabled={busy}
                 onPress={() => (text.trim() ? send() : void startVoice())}
@@ -501,19 +503,19 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
         </View>
       </Column>
       {photoDraft.length > 0 && (
-        <Modal title={`Отправить фото · ${photoDraft.length}`} onClose={() => !busy && setPhotoDraft([])}>
+        <Modal title={photoDraft.length === 1 ? tr("Отправить фото") : tr("Отправить фото · {0}", photoDraft.length)} onClose={() => !busy && setPhotoDraft([])}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            {photoDraft.map((a) => <Image key={a.uri} source={{ uri: a.uri }} style={{ width: 100, height: 100, borderRadius: 10 }} />)}
+            {photoDraft.map((a) => <Image key={a.uri} source={{ uri: a.uri }} contentFit={photoDraft.length === 1 ? "contain" : "cover"} style={photoDraft.length === 1 ? { width: "100%", height: 280, borderRadius: 10 } : { width: 100, height: 100, borderRadius: 10 }} />)}
           </View>
-          <Hint>{busy ? "Загружаем фото…" : "Фото отправятся одним сообщением."}</Hint>
-          <Button title="Отправить вместе" busy={busy} onPress={() => void confirmPhotos()} />
-          <Button title="Отмена" kind="ghost" disabled={busy} onPress={() => setPhotoDraft([])} />
+          <Hint>{busy ? tr("Загружаем фото…") : photoDraft.length === 1 ? tr("Можно отменить перед отправкой.") : tr("Фото отправятся одним сообщением.")}</Hint>
+          <Button title={photoDraft.length === 1 ? tr("Отправить") : tr("Отправить вместе")} busy={busy} onPress={() => void confirmPhotos()} />
+          <Button title={tr("Отмена")} kind="ghost" disabled={busy} onPress={() => setPhotoDraft([])} />
         </Modal>
       )}
       {selected && (
-        <Modal title="Сообщение" onClose={() => setSelected(null)}>
+        <Modal title={tr("Сообщение")} onClose={() => setSelected(null)}>
           <Button
-            title="Ответить"
+            title={tr("Ответить")}
             kind="ghost"
             onPress={() => {
               setReply(selected);
@@ -523,7 +525,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
           {selected.mine && (
             <>
               <Button
-                title="Изменить"
+                title={tr("Изменить")}
                 kind="ghost"
                 disabled={!selected.body}
                 onPress={() => {
@@ -533,7 +535,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
                 }}
               />
               <Button
-                title="Удалить"
+                title={tr("Удалить")}
                 kind="danger"
                 onPress={() => {
                   setDeleting(selected);
@@ -546,11 +548,11 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
       )}
       {editing && (
         <Modal
-          title="Изменить сообщение"
+          title={tr("Изменить сообщение")}
           onClose={() => !busy && setEditing(null)}
         >
           <Field
-            label="Сообщение"
+            label={tr("Сообщение")}
             value={editText}
             onChangeText={setEditText}
             multiline
@@ -558,7 +560,7 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
           />
           <ErrorText>{error}</ErrorText>
           <Button
-            title="Сохранить"
+            title={tr("Сохранить")}
             busy={busy}
             disabled={!editText.trim()}
             onPress={() => void mutate("edit")}
@@ -567,16 +569,16 @@ function ChatThreadScreen({ peerId }: { peerId: number }) {
       )}
       {deleting && (
         <Confirm
-          title="Удалить сообщение?"
-          body="Сообщение исчезнет у обоих участников."
-          label="Удалить"
+          title={tr("Удалить сообщение?")}
+          body={tr("Сообщение исчезнет у обоих участников.")}
+          label={tr("Удалить")}
           busy={busy}
           onConfirm={() => void mutate("delete")}
           onClose={() => !busy && setDeleting(null)}
         />
       )}
       {photo && (
-        <Modal title="Фото" onClose={() => setPhoto(null)}>
+        <Modal title={tr("Фото")} onClose={() => setPhoto(null)}>
           <Image
             source={mediaSource(photo)}
             style={{ width: "100%", height: 400 }}

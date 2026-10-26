@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../src/i18n";
 import { hasPendingDestination, consumeDestination } from "../src/routes";
 import * as Notifications from "expo-notifications";
 import { Stack, useRouter, usePathname } from "expo-router";
@@ -22,6 +23,7 @@ import { Linking, View } from "react-native";
 import { API_URL } from "../src/api/config";
 
 function Gate() {
+  useLanguage();
   const [fontsReady, fontError] = useFonts({
     Fraunces_500Medium,
     Fraunces_700Bold,
@@ -70,11 +72,11 @@ function Gate() {
       <View style={{ flex: 1, backgroundColor: t.bg }}>
         <Empty
           icon="cloud-download-outline"
-          title="Нужно обновление"
-          text={`Эта версия WIRING больше не поддерживается. Установи версию ${upgradeRequired} или новее.`}
+          title={tr("Нужно обновление")}
+          text={tr("Эта версия WIRING больше не поддерживается. Установи версию {0} или новее.", upgradeRequired)}
           action={
             <Button
-              title="Открыть сайт"
+              title={tr("Открыть сайт")}
               onPress={() => Linking.openURL(API_URL)}
             />
           }
@@ -88,7 +90,7 @@ function Gate() {
       <Stack
         screenOptions={{
           headerShown: false,
-          headerBackTitle: "Назад",
+          headerBackTitle: tr("Назад"),
           headerStyle: { backgroundColor: t.bg },
           headerTintColor: t.text,
           headerShadowVisible: false,
@@ -97,9 +99,9 @@ function Gate() {
       >
         <Stack.Protected guard={!!user}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="chat/[id]" options={{ title: "Чат" }} />
-          <Stack.Screen name="person/[id]" options={{ title: "Профиль" }} />
-          <Stack.Screen name="edit-profile" options={{ title: "Моя анкета" }} />
+          <Stack.Screen name="chat/[id]" options={{ title: tr("Чат") }} />
+          <Stack.Screen name="person/[id]" options={{ title: tr("Профиль") }} />
+          <Stack.Screen name="edit-profile" options={{ title: tr("Моя анкета") }} />
           <Stack.Screen name="visibility" />
           <Stack.Screen name="consents" />
           <Stack.Screen name="notifications" />
@@ -119,7 +121,7 @@ function Gate() {
         <Stack.Screen name="verify" />
         <Stack.Protected guard={!user}>
           <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="register" options={{ title: "Регистрация" }} />
+          <Stack.Screen name="register" options={{ title: tr("Регистрация") }} />
         </Stack.Protected>
       </Stack>
       <Inbox />

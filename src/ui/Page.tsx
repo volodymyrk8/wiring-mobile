@@ -1,3 +1,5 @@
+import { api } from "../api/client";
+import { tr, useLanguage, getLanguage, syncLanguage, setPendingLanguage } from "../i18n";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useSegments } from "expo-router";
 import { ProductNav } from "./ProductNav";
@@ -26,6 +28,7 @@ export function Modal({
   children: ReactNode;
   onClose: () => void;
 }) {
+  useLanguage();
   const t = useTheme();
   const inset = useSafeAreaInsets();
   return (
@@ -75,7 +78,7 @@ export function Modal({
             </Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Закрыть"
+              accessibilityLabel={tr("Закрыть")}
               onPress={onClose}
               hitSlop={12}
             >
@@ -93,7 +96,7 @@ export function Modal({
 export function Confirm({
   title,
   body,
-  label = "Подтвердить",
+  label = tr("Подтвердить"),
   busy,
   onConfirm,
   onClose,
@@ -105,6 +108,7 @@ export function Confirm({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  useLanguage();
   const t = useTheme();
   return (
     <Modal title={title} onClose={onClose}>
@@ -113,7 +117,7 @@ export function Confirm({
       </Text>
       <Button title={label} busy={busy} onPress={onConfirm} />
       <View style={{ height: 8 }} />
-      <Button title="Отмена" kind="ghost" disabled={busy} onPress={onClose} />
+      <Button title={tr("Отмена")} kind="ghost" disabled={busy} onPress={onClose} />
     </Modal>
   );
 }
@@ -128,8 +132,11 @@ export function Header({
   back?: boolean;
   compact?: boolean;
 }) {
+  useLanguage();
   const t = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, refresh } = useAuth();
+  const [languageError, setLanguageError] = useState("");
+  const [changingLanguage, setChangingLanguage] = useState(false);
   const router = useRouter();
   const inset = useSafeAreaInsets();
   const prefs = usePrefs();
@@ -158,7 +165,7 @@ export function Header({
       >
         {!compact && back && (
           <Pressable
-            accessibilityLabel="Назад"
+            accessibilityLabel={tr("Назад")}
             accessibilityRole="button"
             onPress={() =>
               router.canGoBack() ? router.back() : router.replace("/")
@@ -169,7 +176,7 @@ export function Header({
           </Pressable>
         )}
         {!compact && <Pressable
-          accessibilityLabel="WIRING — главная"
+          accessibilityLabel={tr("WIRING — главная")}
           onPress={() => router.push("/")}
           style={{ flex: 1 }}
         >
@@ -178,9 +185,23 @@ export function Header({
             {!!title && <Text style={{ color: t.text, fontFamily: fonts.serif, fontSize: 13 }}>/ {title.toLowerCase()}</Text>}
           </View>
         </Pressable>}
+        <Pressable accessibilityRole="button" accessibilityLabel="Язык / Language"
+          disabled={changingLanguage} onPress={async () => {
+            const language = getLanguage() === "ru" ? "en" : "ru";
+            setChangingLanguage(true); setLanguageError("");
+            try {
+              if (user) await api("/api/me/language", { method: "PATCH", body: JSON.stringify({ language }) });
+              setPendingLanguage(user ? null : language);
+              syncLanguage(language);
+              if (user) await refresh();
+            } catch { setLanguageError(tr("Не удалось сохранить язык. Попробуй ещё раз.")); }
+            finally { setChangingLanguage(false); }
+          }} style={{ padding: 8, minWidth: 44, minHeight: 44, justifyContent: "center" }}>
+          <Text style={{ color: t.text, fontSize: 12 }}>{getLanguage().toUpperCase()}</Text>
+        </Pressable>
         {!compact && right}
         <Pressable
-          accessibilityLabel={`Тема: ${THEME_LIST.find((i) => i.id === prefs.theme)?.label}`}
+          accessibilityLabel={tr("Тема: {0}", tr(THEME_LIST.find((i) => i.id === prefs.theme)?.label || ""))}
           onPress={() => setThemeMenu(true)}
           style={{
             marginRight: compact ? "auto" : undefined,
@@ -198,20 +219,21 @@ export function Header({
         </Pressable>
         {compact && right}
         {!compact && <Pressable
-          accessibilityLabel={user ? "Меню профиля" : "Войти"}
+          accessibilityLabel={user ? tr("Меню профиля") : tr("Войти")}
           onPress={() => (user ? setMenu(true) : router.push("/login"))}
         >
           <Avatar uri={user?.photo} name={user?.name} size={40} />
         </Pressable>}
       </View>
+      {languageError ? <Text accessibilityRole="alert" style={{ color: t.danger }}>{languageError}</Text> : null}
       {prefs.themeError ? <Text accessibilityRole="alert" style={{ color: t.danger, fontSize: 12, paddingHorizontal: 12 }}>{prefs.themeError}</Text> : null}
       {themeMenu && (
-        <Modal title="Оформление" onClose={() => setThemeMenu(false)}>
+        <Modal title={tr("Оформление")} onClose={() => setThemeMenu(false)}>
           {THEME_LIST.map((i) => (
             <Row
               key={i.id}
               icon="ellipse"
-              title={i.label}
+              title={tr(i.label)}
               onPress={() => {
                 setPrefs({ theme: i.id });
                 setThemeMenu(false);
@@ -233,15 +255,15 @@ export function Header({
         </Modal>
       )}
       {menu && (
-        <Modal title={user?.name || "Профиль"} onClose={() => setMenu(false)}>
+        <Modal title={user?.name || tr("Профиль")} onClose={() => setMenu(false)}>
           <Row
             icon="person-outline"
-            title="Редактировать анкету"
+            title={tr("Редактировать анкету")}
             onPress={() => go("/edit-profile")}
           />
           <Row
             icon="shield-checkmark-outline"
-            title="Согласия"
+            title={tr("Согласия")}
             onPress={() => go("/consents")}
           />
           <Row
@@ -251,22 +273,22 @@ export function Header({
           />
           <Row
             icon="notifications-outline"
-            title="Уведомления"
+            title={tr("Уведомления")}
             onPress={() => go("/notifications")}
           />
           <Row
             icon="people-outline"
-            title="Пригласи своих"
+            title={tr("Пригласи своих")}
             onPress={() => go("/invite")}
           />
           <Row
             icon="help-buoy-outline"
-            title="Поддержка"
+            title={tr("Поддержка")}
             onPress={() => go("/support")}
           />
           <Row
             icon="log-out-outline"
-            title="Выйти"
+            title={tr("Выйти")}
             onPress={() => {
               setMenu(false);
               void logout().then(() => router.replace("/"));
@@ -278,6 +300,7 @@ export function Header({
   );
 }
 export function LegalFooter() {
+  useLanguage();
   const t = useTheme();
   const router = useRouter();
   return (
@@ -295,12 +318,12 @@ export function LegalFooter() {
     >
       <Text style={{ fontSize: 12, color: t.muted }}>18+</Text>
       {[
-        ["соглашение", "/rules"],
-        ["конфиденциальность", "/privacy"],
-        ["рассылка", "/marketing"],
-        ["Защита детей", "/child-safety"],
-        ["Удаление аккаунта и данных", "/account-deletion"],
-        ["поддержка", "/support"],
+        [tr("соглашение"), "/rules"],
+        [tr("конфиденциальность"), "/privacy"],
+        [tr("рассылка"), "/marketing"],
+        [tr("Защита детей"), "/child-safety"],
+        [tr("Удаление аккаунта и данных"), "/account-deletion"],
+        [tr("поддержка"), "/support"],
       ].map(([label, path]) => (
         <Pressable
           key={path}

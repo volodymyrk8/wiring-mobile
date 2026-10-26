@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../i18n";
 import { useEffect } from "react";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
@@ -16,6 +17,7 @@ export function MatchModal({
   onClose: () => void;
   onWrite: () => void;
 }) {
+  useLanguage();
   const t = useTheme();
   useEffect(() => {
     if (person)
@@ -25,7 +27,7 @@ export function MatchModal({
   }, [person]);
   if (!person) return null;
   return (
-    <Modal title="Взаимный лайк" onClose={onClose}>
+    <Modal title={tr("Взаимный лайк")} onClose={onClose}>
       <Image
         source={mediaSource(person.photo || person.photos?.[0])}
         style={{
@@ -38,11 +40,10 @@ export function MatchModal({
         }}
       />
       <Hint>
-        У вас взаимная симпатия с {person.name}. Можно написать первым.
-      </Hint>
+        {tr("У вас взаимная симпатия с ")}{person.name}{tr(". Можно написать первым.")}</Hint>
       <View style={{ gap: 8 }}>
-        <Button title="Написать" onPress={onWrite} />
-        <Button title="Продолжить ленту" kind="ghost" onPress={onClose} />
+        <Button title={tr("Написать")} onPress={onWrite} />
+        <Button title={tr("Продолжить ленту")} kind="ghost" onPress={onClose} />
       </View>
     </Modal>
   );

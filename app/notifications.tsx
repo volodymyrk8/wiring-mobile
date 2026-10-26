@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../src/i18n";
 import { useState } from "react";
 import { useAuth } from "../src/auth";
 import {
@@ -10,6 +11,7 @@ import {
 import { Page, Title, Hint } from "../src/ui/Page";
 import { ErrorText, Row, Toggle } from "../src/ui/kit";
 export default function Notifications() {
+  useLanguage();
   const { user, setUser } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -28,18 +30,18 @@ export default function Notifications() {
             : await disablePush(state.enabled),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось сохранить");
+      setError(e instanceof Error ? e.message : tr("Не удалось сохранить"));
     } finally {
       setBusy(false);
     }
   };
   return (
-    <Page title="Уведомления">
-      <Title>Уведомления</Title>
-      <Hint>Выбери, какие события будут напоминать о себе.</Hint>
+    <Page title={tr("Уведомления")}>
+      <Title>{tr("Уведомления")}</Title>
+      <Hint>{tr("Выбери, какие события будут напоминать о себе.")}</Hint>
       <Row
         icon="notifications-outline"
-        title="уведомления о лайках и сообщениях — подсказки в приложении"
+        title={tr("уведомления о лайках и сообщениях — подсказки в приложении")}
         right={
           <Toggle
             value={state.enabled}
@@ -50,7 +52,7 @@ export default function Notifications() {
       />
       <Row
         icon="phone-portrait-outline"
-        title="пуш о лайках и сообщениях — и когда приложение закрыто"
+        title={tr("пуш о лайках и сообщениях — и когда приложение закрыто")}
         right={
           <Toggle
             value={state.push}

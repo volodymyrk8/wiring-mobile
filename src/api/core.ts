@@ -32,25 +32,29 @@ export type CoreOptions = {
   fetchFn: typeof fetch;
   tokens: TokenStore;
   hooks: Hooks;
+  translate?: (source: string, ...values: unknown[]) => string;
 };
 
 export type Api = <T = any>(path: string, init?: RequestInit) => Promise<T>;
 
-async function parse(response: Response) {
+const russian = (source: string, ...values: unknown[]) => source.replace(/\{(\d+)\}/g, (_, index) => String(values[Number(index)] ?? ""));
+
+async function parse(response: Response, tr = russian) {
   const raw = await response.text();
   try {
     return raw ? JSON.parse(raw) : {};
   } catch {
     const hint =
       response.status >= 500
-        ? "сервер временно недоступен"
-        : "сервер вернул неожиданный ответ";
+        ? tr("сервер временно недоступен")
+        : tr("сервер вернул неожиданный ответ");
     throw new ApiError(hint, {}, response.status);
   }
 }
 
 export function createApi(opts: CoreOptions): Api {
   const { baseUrl, version, platform, fetchFn, tokens, hooks } = opts;
+  const tr = opts.translate || russian;
 
   async function send(path: string, init: RequestInit): Promise<Response> {
     const headers: Record<string, string> = {
@@ -75,7 +79,7 @@ export function createApi(opts: CoreOptions): Api {
       });
     } catch (error) {
       if (init.signal?.aborted) throw error;
-      throw new ApiError("нет соединения с сервером", {}, 0);
+      throw new ApiError(tr("нет соединения с сервером"), {}, 0);
     }
   }
 
@@ -91,7 +95,7 @@ export function createApi(opts: CoreOptions): Api {
           method: "POST",
           body: JSON.stringify({ refresh_token: refresh }),
         });
-        const data = await parse(response);
+        const data = await parse(response, tr);
         if (!response.ok || !data.access_token) return false;
         await tokens.set("access", data.access_token);
         await tokens.set("refresh", data.refresh_token);
@@ -112,7 +116,7 @@ export function createApi(opts: CoreOptions): Api {
     retried = false,
   ): Promise<T> {
     const response = await send(path, init);
-    const data = await parse(response);
+    const data = await parse(response, tr);
     if (response.status === 426 && data.upgrade)
       hooks.onUpgradeRequired?.(String(data.min_version || ""));
     if (
@@ -127,7 +131,7 @@ export function createApi(opts: CoreOptions): Api {
     }
     if (!response.ok || data.ok === false) {
       throw new ApiError(
-        String(data.error || `ошибка ${response.status}`),
+        String(data.error || tr("ошибка {0}", response.status)),
         data,
         response.status,
       );

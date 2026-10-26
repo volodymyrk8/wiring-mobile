@@ -1,3 +1,4 @@
+import { tr, loadLanguage, syncLanguage, pendingLanguage, setPendingLanguage } from "./i18n";
 import { AppState } from "react-native";
 import { clearFeeds } from "./features/feed/store";
 import {
@@ -10,7 +11,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { endpoints, setApiHooks } from "./api/client";
+import { api, endpoints, setApiHooks } from "./api/client";
 import { clearSession, getToken, loadTokens, setToken } from "./api/tokens";
 import type { Me, Session } from "./api/types";
 import { loadFilters } from "./filters";
@@ -40,6 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Me | null>(null);
   const userId = user?.id;
   const userTheme = user?.theme;
+  useEffect(() => {
+    if (!user) return;
+    const pending = pendingLanguage();
+    if (!pending) { syncLanguage(user.language); return; }
+    let active = true;
+    void api("/api/me/language", { method: "PATCH", body: JSON.stringify({ language: pending }) }).then(() => {
+      if (!active) return;
+      setPendingLanguage(null);
+      syncLanguage(pending);
+      setUser(previous => previous?.id === user.id ? { ...previous, language: pending } : previous);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [user]);
   useEffect(() => { syncAccountTheme(userId ? { id: userId, theme: userTheme } : null); }, [userId, userTheme]);
   const [loading, setLoading] = useState(true);
   const [upgradeRequired, setUpgradeRequired] = useState<string | null>(null);
@@ -62,10 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearFeeds();
         setUser(null);
       },
-      onUpgradeRequired: (min) => setUpgradeRequired(min || "новой версии"),
+      onUpgradeRequired: (min) => setUpgradeRequired(min || tr("новой версии")),
     });
     (async () => {
-      await Promise.all([loadTokens(), loadFilters(), loadPrefs()]);
+      await Promise.all([loadTokens(), loadFilters(), loadPrefs(), loadLanguage()]);
       if (getToken("access") || getToken("refresh")) await refresh();
       setLoading(false);
     })();

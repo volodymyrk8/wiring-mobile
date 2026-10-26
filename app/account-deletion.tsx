@@ -1,5 +1,7 @@
+import { tr, useLanguage } from "../src/i18n";
 import blocks from "../src/content/account-deletion.json";
 import { LegalScreen } from "../src/ui/LegalScreen";
 export default function Legal() {
-  return <LegalScreen title="Удаление аккаунта и данных" blocks={blocks} />;
+  useLanguage();
+  return <LegalScreen title={tr("Удаление аккаунта и данных")} blocks={blocks} />;
 }

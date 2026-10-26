@@ -1,6 +1,7 @@
 export type Photo = string | { url: string; is_primary?: boolean; id?: number };
 
 export type Person = {
+  language?: "ru" | "en";
   id: number;
   name: string;
   age?: number | string;

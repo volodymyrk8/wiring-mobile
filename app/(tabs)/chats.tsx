@@ -1,3 +1,4 @@
+import { tr, getLocale, useLanguage } from "../../src/i18n";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../src/auth";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -22,10 +23,11 @@ const when = (ts?: number) => {
   if (!ts) return "";
   const d = new Date(ts * 1000);
   return d.toDateString() === new Date().toDateString()
-    ? d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
-    : d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+    ? d.toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString(getLocale(), { day: "numeric", month: "short" });
 };
 export default function Chats() {
+  useLanguage();
   const t = useTheme();
   const router = useRouter();
   const { user } = useAuth();
@@ -48,7 +50,7 @@ export default function Chats() {
       }
     } catch (e) {
       if (active.current)
-        setError(e instanceof Error ? e.message : "Не удалось загрузить");
+        setError(e instanceof Error ? e.message : tr("Не удалось загрузить"));
     } finally {
       running.current = false;
       if (active.current) setRefreshing(false);
@@ -76,30 +78,30 @@ export default function Chats() {
       setRemove(null);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не получилось");
+      setError(e instanceof Error ? e.message : tr("Не получилось"));
     } finally {
       setBusy(false);
     }
   };
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <Header title="Чаты" />
+      <Header title={tr("Чаты")} />
       <Column>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginHorizontal: 16, marginVertical: 12, borderRadius: 16, backgroundColor: t.card, paddingHorizontal: 14 }}>
           <Ionicons name="search-outline" size={18} color={t.muted} />
-          <TextInput accessibilityLabel="Найти диалог" placeholder="найти диалог" placeholderTextColor={t.muted} value={search} onChangeText={setSearch} style={{ flex: 1, paddingVertical: 13, color: t.text, fontFamily: fonts.body, fontSize: 14 }} />
+          <TextInput accessibilityLabel={tr("Найти диалог")} placeholder={tr("найти диалог")} placeholderTextColor={t.muted} value={search} onChangeText={setSearch} style={{ flex: 1, paddingVertical: 13, color: t.text, fontFamily: fonts.body, fontSize: 14 }} />
         </View>
         <ErrorText>{error}</ErrorText>
         {!matches ? (
           <Loading />
         ) : !matches.length ? (
           <Empty
-            title="Пока нет мэтчей"
-            text="Когда вы с кем-то лайкнете друг друга, чат появится здесь."
+            title={tr("Пока нет мэтчей")}
+            text={tr("Когда вы с кем-то лайкнете друг друга, чат появится здесь.")}
           />
         ) : (
           <FlatList
-            data={matches.filter(m => m.name.toLocaleLowerCase("ru").includes(search.toLocaleLowerCase("ru")))}
+            data={matches.filter(m => m.name.toLocaleLowerCase(getLocale()).includes(search.toLocaleLowerCase(getLocale())))}
             keyExtractor={(m) => String(m.id)}
             refreshControl={
               <RefreshControl
@@ -163,7 +165,7 @@ export default function Chats() {
                         fontSize: 13,
                       }}
                     >
-                      {item.last_from_id === user?.id ? "ты: " : ""}{item.last_message || "Напиши первым"}
+                      {item.last_from_id === user?.id ? tr("ты: ") : ""}{item.last_message || tr("Начни разговор")}
                     </Text>
                   </View>
                   {!!item.unread && (
@@ -180,7 +182,7 @@ export default function Chats() {
                     </Text>
                   )}
                 </Pressable>
-                <Pressable accessibilityRole="button" accessibilityLabel="Убрать чат" onPress={() => setRemove(item)} hitSlop={8} style={{ position: "absolute", top: 34, right: 0, padding: 5 }}><Ionicons name="close-outline" size={16} color={t.muted} /></Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel={tr("Убрать чат")} onPress={() => setRemove(item)} hitSlop={8} style={{ position: "absolute", top: 34, right: 0, padding: 5 }}><Ionicons name="close-outline" size={16} color={t.muted} /></Pressable>
               </View>
             )}
           />
@@ -188,9 +190,9 @@ export default function Chats() {
       </Column>
       {remove && (
         <Confirm
-          title="Убрать из чатов?"
-          body="Переписка скроется у обоих, анкета уйдёт в дизлайки. Вернуть её можно в архиве своих решений."
-          label="Убрать"
+          title={tr("Убрать из чатов?")}
+          body={tr("Переписка скроется у обоих, анкета уйдёт в дизлайки. Вернуть её можно в архиве своих решений.")}
+          label={tr("Убрать")}
           busy={busy}
           onConfirm={() => void unmatch()}
           onClose={() => !busy && setRemove(null)}

@@ -1,3 +1,4 @@
+import { tr, getLocale, useLanguage } from "../src/i18n";
 import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
 import { useAuth } from "../src/auth";
@@ -13,6 +14,7 @@ import {
   Toggle,
 } from "../src/ui/kit";
 export default function Plus() {
+  useLanguage();
   const { user, setUser } = useAuth();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,10 +29,10 @@ export default function Plus() {
     try {
       const res = await fn();
       setUser(res.user);
-      setNotice("Сохранено");
+      setNotice(tr("Сохранено"));
       setCode("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось сохранить");
+      setError(e instanceof Error ? e.message : tr("Не удалось сохранить"));
     } finally {
       setBusy(false);
     }
@@ -39,22 +41,21 @@ export default function Plus() {
     <Page title="WIRING+">
       <Title>WIRING+</Title>
       <Hint>
-        Спокойный и комфортный режим знакомств без лишней спешки и ограничений.
-      </Hint>
+        {tr("Спокойный и комфортный режим знакомств без лишней спешки и ограничений.")}</Hint>
       <Card>
         <SectionTitle>
-          {user?.plus ? "WIRING+ включён" : "WIRING+ выключен"}
+          {user?.plus ? tr("WIRING+ включён") : tr("WIRING+ выключен")}
         </SectionTitle>
         <Hint>
           {user?.plus_until
-            ? `Подписка заканчивается ${new Date(user.plus_until * 1000).toLocaleDateString("ru-RU")}`
-            : "Спокойный режим: кто лайкнул, инкогнито, пауза, заметки и отложенные профили."}
+            ? tr("Подписка заканчивается {0}", new Date(user.plus_until * 1000).toLocaleDateString(getLocale()))
+            : tr("Спокойный режим: кто лайкнул, инкогнито, пауза, заметки и отложенные профили.")}
         </Hint>
         {user?.plus && (
           <>
             <Row
               icon="eye-off-outline"
-              title="инкогнито — меня не показывают, пока я сам не лайкну"
+              title={tr("инкогнито — меня не показывают, пока я сам не лайкну")}
               right={
                 <Toggle
                   value={!!user.incognito}
@@ -67,7 +68,7 @@ export default function Plus() {
             />
             <Row
               icon="pause-outline"
-              title="пауза — временно скрыть анкету"
+              title={tr("пауза — временно скрыть анкету")}
               right={
                 <Toggle
                   value={!!user.paused}
@@ -81,14 +82,14 @@ export default function Plus() {
           </>
         )}
         <Field
-          label="Промокод"
+          label={tr("Промокод")}
           value={code}
           onChangeText={setCode}
           maxLength={24}
           autoCapitalize="characters"
         />
         <Button
-          title="Активировать"
+          title={tr("Активировать")}
           disabled={!code.trim()}
           busy={busy}
           onPress={() => void perform(() => endpoints.redeem(code.trim()))}
@@ -98,20 +99,20 @@ export default function Plus() {
       </Card>
       {[
         [
-          "Видно, кто лайкнул",
-          "Открывай входящие симпатии и выбирай, кому ответить взаимностью.",
+          tr("Видно, кто лайкнул"),
+          tr("Открывай входящие симпатии и выбирай, кому ответить взаимностью."),
         ],
         [
-          "Режим инкогнито",
-          "Твоя анкета видна только тем людям, которых ты лайкнул сам.",
+          tr("Режим инкогнито"),
+          tr("Твоя анкета видна только тем людям, которых ты лайкнул сам."),
         ],
         [
-          "Пауза анкеты",
-          "Скрой себя из ленты на время отдыха — текущие переписки и мэтчи сохранятся.",
+          tr("Пауза анкеты"),
+          tr("Скрой себя из ленты на время отдыха — текущие переписки и мэтчи сохранятся."),
         ],
         [
-          "Заметки и закладки",
-          "Оставляй личные пометки к профилям — их видишь только ты.",
+          tr("Заметки и закладки"),
+          tr("Оставляй личные пометки к профилям — их видишь только ты."),
         ],
       ].map(([title, text]) => (
         <Card key={title} style={{ marginTop: 12 }}>
@@ -121,23 +122,22 @@ export default function Plus() {
       ))}
       {user?.ref_url && (
         <Card style={{ marginTop: 16 }}>
-          <SectionTitle>Пригласи своих</SectionTitle>
+          <SectionTitle>{tr("Пригласи своих")}</SectionTitle>
           <Hint>
-            По ссылке зарегистрируется человек — ещё {user.ref_days || 30} дней
-            WIRING+ вам обоим. Уже привели: {user.ref_count || 0}
+            {tr("По ссылке зарегистрируется человек — ещё ")}{user.ref_days || 30} {tr(" дней WIRING+ вам обоим. Уже привели: ")}{user.ref_count || 0}
           </Hint>
           <Field
-            label="Реферальная ссылка"
+            label={tr("Реферальная ссылка")}
             value={user.ref_url}
             editable={false}
           />
           <Button
-            title="Копировать"
+            title={tr("Копировать")}
             kind="ghost"
             onPress={() =>
               void Clipboard.setStringAsync(user.ref_url!)
-                .then(() => setNotice("Ссылка скопирована"))
-                .catch(() => setError("Не удалось скопировать"))
+                .then(() => setNotice(tr("Ссылка скопирована")))
+                .catch(() => setError(tr("Не удалось скопировать")))
             }
           />
         </Card>

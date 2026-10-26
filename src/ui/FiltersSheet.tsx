@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../i18n";
 import { applyNeuroToggle } from "../catalogTags";
 import { Text } from "./Typography";
 import { Ionicons } from "@expo/vector-icons";
@@ -45,6 +46,7 @@ export function FilterButton({
   filters: Filters;
   onPress: () => void;
 }) {
+  useLanguage();
   const t = useTheme();
   const n = activeFilterCount(filters);
   return (
@@ -61,7 +63,7 @@ export function FilterButton({
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={n ? `Фильтры, применено: ${n}` : "Фильтры"}
+          accessibilityLabel={n ? tr("Фильтры, применено: {0}", n) : tr("Фильтры")}
           onPress={() => {
             tap();
             onPress();
@@ -110,6 +112,7 @@ export function FiltersSheet({
   onApply: (f: Filters) => void;
   onClose: () => void;
 }) {
+  useLanguage();
   const t = useTheme();
   const router = useRouter();
   const catalog = useCatalog();
@@ -181,12 +184,11 @@ export function FiltersSheet({
             accessibilityRole="header"
             style={{ color: t.text, fontSize: 26, fontWeight: "800" }}
           >
-            Фильтры
-          </Text>
+            {tr("Фильтры")}</Text>
           <Pressable
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="Закрыть"
+            accessibilityLabel={tr("Закрыть")}
             hitSlop={12}
           >
             <Ionicons name="close-circle" size={30} color={t.muted} />
@@ -210,10 +212,10 @@ export function FiltersSheet({
               }}
               keyboardShouldPersistTaps="handled"
             >
-              <SectionTitle>Пол</SectionTitle>
+              <SectionTitle>{tr("Пол")}</SectionTitle>
               <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 <Chip
-                  label="Любой"
+                  label={tr("Любой")}
                   selected={!draft.gender}
                   onPress={() => set("gender", "")}
                 />
@@ -226,11 +228,11 @@ export function FiltersSheet({
                   />
                 ))}
               </View>
-              <SectionTitle>Возраст</SectionTitle>
+              <SectionTitle>{tr("Возраст")}</SectionTitle>
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Field
-                    label="От"
+                    label={tr("От")}
                     value={minText}
                     onChangeText={(v) => setMinText(v.replace(/\D/g, ""))}
                     keyboardType="number-pad"
@@ -239,7 +241,7 @@ export function FiltersSheet({
                 </View>
                 <View style={{ flex: 1 }}>
                   <Field
-                    label="До"
+                    label={tr("До")}
                     value={maxText}
                     onChangeText={(v) => setMaxText(v.replace(/\D/g, ""))}
                     keyboardType="number-pad"
@@ -251,20 +253,20 @@ export function FiltersSheet({
               <Card style={{ marginBottom: 8 }}>
                 <Row
                   icon="location-outline"
-                  title="Город"
-                  subtitle={draft.city || "Любой"}
+                  title={tr("Город")}
+                  subtitle={tr(draft.city || "Любой")}
                   onPress={() => setCityOpen(true)}
                 />
               </Card>
 
-              <SectionTitle>Формат знакомства</SectionTitle>
+              <SectionTitle>{tr("Формат знакомства")}</SectionTitle>
               {chips(catalog.intents, "intents")}
-              <SectionTitle>Диагнозы</SectionTitle>
+              <SectionTitle>{tr("Диагнозы")}</SectionTitle>
               {chips(catalog.neuro, "neuro")}
               <Card style={{ marginVertical: 12 }}>
                 <Row
                   icon="eye-off-outline"
-                  title="Скрыть анкеты без диагноза"
+                  title={tr("Скрыть анкеты без диагноза")}
                   right={
                     <Toggle
                       value={draft.hide_undiagnosed}
@@ -273,10 +275,10 @@ export function FiltersSheet({
                   }
                 />
               </Card>
-              <SectionTitle>Вайб</SectionTitle>
+              <SectionTitle>{tr("Вайб")}</SectionTitle>
               {chips(catalog.vibe, "vibe")}
               <Button
-                title="Кому показывать мою анкету"
+                title={tr("Кому показывать мою анкету")}
                 kind="ghost"
                 onPress={() => {
                   onClose();
@@ -297,10 +299,10 @@ export function FiltersSheet({
               }}
             >
               <View style={{ flex: 1 }}>
-                <Button title="Сбросить" kind="soft" onPress={reset} />
+                <Button title={tr("Сбросить")} kind="soft" onPress={reset} />
               </View>
               <View style={{ flex: 1.3 }}>
-                <Button title="Показать" icon="checkmark" onPress={apply} />
+                <Button title={tr("Показать")} icon="checkmark" onPress={apply} />
               </View>
             </View>
           </KeyboardAvoidingView>

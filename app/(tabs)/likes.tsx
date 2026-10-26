@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../../src/i18n";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Image } from "expo-image";
@@ -27,6 +28,7 @@ import {
 import { Page, Title, Hint, Modal } from "../../src/ui/Page";
 import { Text, fonts } from "../../src/ui/Typography";
 export default function Likes() {
+  const language = useLanguage();
   const t = useTheme();
   const router = useRouter();
   const catalog = useCatalog();
@@ -54,7 +56,7 @@ export default function Likes() {
       }
     } catch (e) {
       if (active.current)
-        setError(e instanceof Error ? e.message : "Не удалось загрузить");
+        setError(e instanceof Error ? e.message : tr("Не удалось загрузить"));
     }
   }, [filters]);
   useFocusEffect(
@@ -67,8 +69,8 @@ export default function Likes() {
     }, [load]),
   );
   const sorted = useMemo(
-    () => sortLikeCards(likes || [], prefs.likesSort as LikesSort),
-    [likes, prefs.likesSort],
+    () => sortLikeCards(likes || [], prefs.likesSort as LikesSort, language),
+    [likes, prefs.likesSort, language],
   );
   const redeem = async () => {
     setBusy(true);
@@ -78,15 +80,15 @@ export default function Likes() {
       setCode("");
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось применить код");
+      setError(e instanceof Error ? e.message : tr("Не удалось применить код"));
     } finally {
       setBusy(false);
     }
   };
   return (
-    <Page title="Лайки" back={false}>
-      <Title>Тебя лайкнули</Title>
-      <Hint>Здесь люди, которым понравилась твоя анкета.</Hint>
+    <Page title={tr("Лайки")} back={false}>
+      <Title>{tr("Тебя лайкнули")}</Title>
+      <Hint>{tr("Здесь люди, которым понравилась твоя анкета.")}</Hint>
       <View
         style={{
           flexDirection: "row",
@@ -97,19 +99,19 @@ export default function Likes() {
       >
         <FilterButton filters={filters} onPress={() => setFiltersOpen(true)} />
         <Button
-          title="Сортировка"
+          title={tr("Сортировка")}
           kind="ghost"
           onPress={() => setSortOpen(true)}
         />
-        <Button title="Обновить" kind="ghost" onPress={() => void load()} />
+        <Button title={tr("Обновить")} kind="ghost" onPress={() => void load()} />
       </View>
       <ErrorText>{error}</ErrorText>
       {!likes ? (
         <Loading />
       ) : !likes.length ? (
         <Empty
-          title="Пока нет лайков"
-          text="Заполни анкету и загляни в ленту. Если включены фильтры, попробуй их сбросить."
+          title={tr("Пока нет лайков")}
+          text={tr("Заполни анкету и загляни в ленту. Если включены фильтры, попробуй их сбросить.")}
         />
       ) : (
         <>
@@ -118,20 +120,18 @@ export default function Likes() {
               <Text
                 style={{ color: t.text, fontFamily: fonts.serif, fontSize: 24 }}
               >
-                Открой симпатии с WIRING+
-              </Text>
+                {tr("Открой симпатии с WIRING+")}</Text>
               <Hint>
-                Фото и анкеты тех, кто тебя лайкнул, доступны с подпиской.
-              </Hint>
-              <Field label="Промокод" value={code} onChangeText={setCode} />
+                {tr("Фото и анкеты тех, кто тебя лайкнул, доступны с подпиской.")}</Hint>
+              <Field label={tr("Промокод")} value={code} onChangeText={setCode} />
               <Button
-                title="Применить"
+                title={tr("Применить")}
                 busy={busy}
                 disabled={!code.trim()}
                 onPress={() => void redeem()}
               />
               <Button
-                title="О WIRING+"
+                title={tr("О WIRING+")}
                 kind="ghost"
                 onPress={() => router.push("/plus")}
               />
@@ -181,12 +181,12 @@ export default function Likes() {
                   }}
                 >
                   {p.hidden
-                    ? "Новая симпатия"
+                    ? tr("Новая симпатия")
                     : `${p.name}${p.age ? `, ${p.age}` : ""}`}
                 </Text>
                 <Text style={{ color: t.muted, fontSize: 12 }}>
                   {p.hidden
-                    ? "Этот человек лайкнул твою анкету"
+                    ? tr("Этот человек лайкнул твою анкету")
                     : [
                         p.city,
                         (p.intents || [])
@@ -230,7 +230,7 @@ export default function Likes() {
                   style={{ color: t.muted, fontSize: 12, lineHeight: 18 }}
                 >
                   {p.hidden
-                    ? "Фото и анкета доступны с подпиской WIRING+"
+                    ? tr("Фото и анкета доступны с подпиской WIRING+")
                     : p.bio || p.communication}
                 </Text>
                 <Text
@@ -241,7 +241,7 @@ export default function Likes() {
                     marginTop: 5,
                   }}
                 >
-                  {p.hidden ? "Открыть с WIRING+ →" : "Смотреть анкету →"}
+                  {p.hidden ? tr("Открыть с WIRING+ →") : tr("Смотреть анкету →")}
                 </Text>
               </View>
             </Pressable>
@@ -259,7 +259,7 @@ export default function Likes() {
         />
       )}
       {sortOpen && (
-        <Modal title="Сортировка лайков" onClose={() => setSortOpen(false)}>
+        <Modal title={tr("Сортировка лайков")} onClose={() => setSortOpen(false)}>
           <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
             {LIKES_SORT_OPTIONS.map((o) => (
               <Chip
