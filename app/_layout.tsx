@@ -36,20 +36,20 @@ function Gate() {
   const router = useRouter();
   const path = usePathname();
   useEffect(() => {
-    if (loading) return;
+    if (loading || (!fontsReady && !fontError)) return;
     if (!user && hasPendingDestination() && path !== "/login")
       router.replace("/login");
-    else if (user && hasPendingDestination())
+    else if (user && !user.needs_profile_setup && hasPendingDestination())
       router.replace(consumeDestination() as never);
-  }, [loading, user, path, router]);
+  }, [loading, fontsReady, fontError, user, path, router]);
   useEffect(() => {
     if (
-      !loading &&
-      user?.needs_profile &&
-      ["/feed", "/likes", "/chats", "/for-you"].includes(path)
+      !loading && (fontsReady || fontError) &&
+      ((user?.needs_profile_setup && !["/edit-profile", "/consents", "/support", "/delete-account"].includes(path)) ||
+      (user?.needs_profile && ["/feed", "/likes", "/chats", "/for-you"].includes(path)))
     )
       router.replace("/edit-profile");
-  }, [loading, user?.needs_profile, path, router]);
+  }, [loading, fontsReady, fontError, user?.needs_profile, user?.needs_profile_setup, path, router]);
 
   useEffect(() => {
     if (!user) return;

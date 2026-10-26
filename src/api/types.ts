@@ -4,7 +4,7 @@ export type Person = {
   language?: "ru" | "en";
   id: number;
   name: string;
-  age?: number | string;
+  age?: number | string | null;
   city?: string;
   bio?: string;
   job?: string;
@@ -34,6 +34,7 @@ export type Me = Person & {
   guest?: boolean;
   plus?: boolean;
   needs_profile?: boolean;
+  needs_profile_setup?: boolean;
   needs_special_consent?: boolean;
   needs_photo_consent?: boolean;
   notify_enabled?: boolean;

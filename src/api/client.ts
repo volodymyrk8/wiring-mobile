@@ -66,10 +66,10 @@ export const endpoints = {
     user_id: number,
     action: "unlike" | "restore" | "unblock" | "unmatch",
   ) => api<Archive>("/api/archive", json({ user_id, action })),
-  consents: (special_data_consent: boolean, photo_rights_consent: boolean) =>
+  consents: (special_data_consent: boolean) =>
     api<{ user: Me }>(
       "/api/me/consents",
-      json({ special_data_consent, photo_rights_consent }, "PATCH"),
+      json({ special_data_consent }, "PATCH"),
     ),
   plus: (body: { incognito?: boolean; paused?: boolean }) =>
     api<{ user: Me }>("/api/plus", json(body, "PATCH")),
@@ -221,7 +221,6 @@ export const endpoints = {
   uploadPhoto: (uri: string, mime: string, name: string) => {
     const form = new FormData();
     form.append("file", { uri, name, type: mime } as any);
-    form.append("photo_rights_consent", "1");
     return api<{ photo: { id: number; url: string } }>("/api/photos", {
       method: "POST",
       body: form,

@@ -112,10 +112,6 @@ export default function EditProfile({
       typeof p !== "string" && p.id !== undefined,
   );
   const upload = async () => {
-    if (!draft?.photo_rights_consent) {
-      setError(tr("Сначала отметь галочку про свои фото."));
-      return;
-    }
     await run(async () => {
       const picked = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
@@ -139,6 +135,29 @@ export default function EditProfile({
         <Loading />
       </Page>
     );
+  if (user.needs_profile_setup) return (
+    <Page title={tr("Заверши анкету")} back={false}>
+      <Title>{tr("Заверши анкету")}</Title>
+      <Hint>{tr("Укажи имя, возраст и добавь изображение. Остальное можно заполнить позже.")}</Hint>
+      <Hint>{tr("Анкета появится в ленте только после публикации.")}</Hint>
+      <Field label={tr("Имя")} value={draft.name} onChangeText={v => set("name", v)} maxLength={32} />
+      <Field label={tr("Возраст")} value={draft.age} onChangeText={v => set("age", v)} keyboardType="number-pad" maxLength={2} />
+      <Hint>{tr("Можно загрузить фото, рисунок или мем. Показывать лицо не обязательно.")}</Hint>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {photos.map(p => <Image key={p.id} source={mediaSource(p.url)} style={{ width: 96, height: 120, borderRadius: 14 }} />)}
+      </View>
+      <Button title={tr("+ Добавить фото")} kind="ghost" busy={busy} onPress={() => void upload()} />
+      {draft.neuro.length > 0 && <Check checked={draft.special_data_consent} onChange={value => set("special_data_consent", value)} label={tr("Согласен(на) на обработку и показ выбранных особенностей")} />}
+      <ErrorText>{error || (state.phase === "error" ? state.error : "")}</ErrorText>
+      <Button title={tr("Опубликовать анкету")} busy={busy} onPress={() => void run(async () => {
+        const age = Number(draft.age);
+        if (draft.name.trim().length < 2 || !Number.isInteger(age) || age < 18 || age > 99) throw new Error(tr("Укажи имя и возраст от 18 до 99 лет"));
+        if (!photos.length && !user.photo) throw new Error(tr("Добавь изображение для анкеты"));
+        const result = await saver.current?.save(true);
+        if (result && !result.user.needs_profile) router.replace("/(tabs)/feed");
+      })} />
+    </Page>
+  );
   const choices = (
     key: "neuro" | "vibe" | "intents",
     items: { id: string; label?: string }[] = [],
@@ -204,11 +223,7 @@ export default function EditProfile({
       )}
       <SectionTitle>{tr("Фото")}</SectionTitle>
       <Hint>{tr("Меняй порядок стрелками под фото. Первое фото — аватар в ленте.")}</Hint>
-      <Check
-        checked={draft.photo_rights_consent}
-        onChange={(v) => set("photo_rights_consent", v)}
-        label={tr("Загружаю только свои фото и разрешаю показывать их участникам WIRING")}
-      />
+      <Hint>{tr("Можно загрузить фото, рисунок или мем. Показывать лицо не обязательно.")}</Hint>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {photos.map((p, index) => (
           <View

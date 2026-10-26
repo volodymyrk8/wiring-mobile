@@ -14,7 +14,6 @@ export type Draft = {
   intents: string[];
   prompts: { id: string; answer: string }[];
   special_data_consent: boolean;
-  photo_rights_consent: boolean;
 };
 export function profileDraft(u: Me): Draft {
   return {
@@ -32,7 +31,6 @@ export function profileDraft(u: Me): Draft {
     intents: u.intents?.length ? u.intents : ["dating"],
     prompts: u.prompts || [],
     special_data_consent: !u.needs_special_consent,
-    photo_rights_consent: !u.needs_photo_consent,
   };
 }
 export function profilePayload(d: Draft, publish: boolean) {
