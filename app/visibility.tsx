@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../src/i18n";
 import { Page } from "../src/ui/Page";
 import { Text } from "../src/ui/Typography";
 import { useRouter } from "expo-router";
@@ -31,6 +32,7 @@ const clamp = (v: string, fallback: number) => {
 
 /** "Кому показывать мою анкету": the web's discovery settings. Saved as a partial (draft) PATCH. */
 export default function Visibility() {
+  useLanguage();
   const t = useTheme();
   const router = useRouter();
   const gutter = useGutter();
@@ -85,7 +87,7 @@ export default function Visibility() {
   );
 
   return (
-    <Page title="Кому показывать мою анкету" footer={false}>
+    <Page title={tr("Кому показывать мою анкету")} footer={false}>
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: gutter,
@@ -105,15 +107,13 @@ export default function Visibility() {
             marginBottom: 8,
           }}
         >
-          Анкету увидят только люди, подходящие под эти условия. Ты сам
-          по-прежнему видишь всех по своим фильтрам.
-        </Text>
+          {tr("Анкету увидят только люди, подходящие под эти условия. Ты сам по-прежнему видишь всех по своим фильтрам.")}</Text>
 
-        <SectionTitle>Возраст тех, кто может меня видеть</SectionTitle>
+        <SectionTitle>{tr("Возраст тех, кто может меня видеть")}</SectionTitle>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <View style={{ flex: 1 }}>
             <Field
-              label="От"
+              label={tr("От")}
               value={minText}
               onChangeText={(v) => setMinText(v.replace(/\D/g, ""))}
               keyboardType="number-pad"
@@ -122,7 +122,7 @@ export default function Visibility() {
           </View>
           <View style={{ flex: 1 }}>
             <Field
-              label="До"
+              label={tr("До")}
               value={maxText}
               onChangeText={(v) => setMaxText(v.replace(/\D/g, ""))}
               keyboardType="number-pad"
@@ -134,23 +134,22 @@ export default function Visibility() {
         <Card style={{ marginBottom: 8 }}>
           <Row
             icon="globe-outline"
-            title="Откуда"
-            subtitle={place || "Отовсюду"}
+            title={tr("Откуда")}
+            subtitle={place || tr("Отовсюду")}
             onPress={() => setPlaceOpen(true)}
           />
         </Card>
 
         <SectionTitle>
-          Не показывать меня людям с этими особенностями
-        </SectionTitle>
+          {tr("Не показывать меня людям с этими особенностями")}</SectionTitle>
         {chips(catalog.neuro)}
-        <SectionTitle>Не показывать меня людям с таким вайбом</SectionTitle>
+        <SectionTitle>{tr("Не показывать меня людям с таким вайбом")}</SectionTitle>
         {chips(catalog.vibe)}
 
         <View style={{ height: 12 }} />
         <ErrorText>{error}</ErrorText>
         <Button
-          title="Сохранить"
+          title={tr("Сохранить")}
           icon="checkmark"
           onPress={save}
           busy={saving}
@@ -159,9 +158,9 @@ export default function Visibility() {
       <CityPicker
         visible={placeOpen}
         allowAny
-        anyLabel="Отовсюду"
+        anyLabel={tr("Отовсюду")}
         includeCountries
-        title="Откуда"
+        title={tr("Откуда")}
         places={catalog.places || []}
         onClose={() => setPlaceOpen(false)}
         onPick={(p) => {

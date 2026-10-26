@@ -1,3 +1,4 @@
+import { tr } from "./i18n";
 import { api } from "./api/client";
 import { themes, type ThemeName } from "./themeTokens";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -45,7 +46,7 @@ export function setPrefs(patch: Partial<Prefs>) {
     const owner = accountId;
     save = save.catch(() => undefined).then(async () => {
       if (accountId === owner) await api("/api/me/theme", { method: "PATCH", body: JSON.stringify({ theme: patch.theme }) });
-    }).catch(() => { current = { ...current, themeError: "Не удалось сохранить тему в аккаунте. Выбери её ещё раз." }; listeners.forEach((l) => l()); });
+    }).catch(() => { current = { ...current, themeError: tr("Не удалось сохранить тему в аккаунте. Выбери её ещё раз.") }; listeners.forEach((l) => l()); });
   }
   listeners.forEach((l) => l());
   AsyncStorage.setItem(KEY, JSON.stringify(current)).catch(() => undefined);

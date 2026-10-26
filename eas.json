@@ -32,10 +32,25 @@
       "ios": {
         "image": "macos-tahoe-26.5-xcode-26.6"
       }
+    },
+    "device": {
+      "extends": "production",
+      "distribution": "internal",
+      "ios": {
+        "image": "macos-tahoe-26.5-xcode-26.6"
+      }
     }
   },
   "submit": {
-    "production": {},
-    "testflight": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6817900988"
+      }
+    },
+    "testflight": {
+      "ios": {
+        "ascAppId": "6817900988"
+      }
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../../i18n";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { api } from "../../api/client";
@@ -14,6 +15,7 @@ export function SocialButtons({
   consent: boolean;
   refCode?: string;
 }) {
+  useLanguage();
   const [providers, setProviders] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,7 +33,7 @@ export function SocialButtons({
   const start = async (provider: string) => {
     if (busy) return;
     if (mode === "register" && !consent) {
-      setError("Подтверди 18+ и согласие с правилами");
+      setError(tr("Подтверди 18+ и согласие с правилами"));
       return;
     }
     setBusy(true);
@@ -48,7 +50,7 @@ export function SocialButtons({
             : "/(tabs)/feed",
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось войти");
+      setError(e instanceof Error ? e.message : tr("Не удалось войти"));
     } finally {
       setBusy(false);
     }
@@ -58,7 +60,7 @@ export function SocialButtons({
       {providers.map((p) => (
         <Button
           key={p}
-          title={`${mode === "register" ? "Зарегистрироваться" : "Войти"} через ${p === "google" ? "Google" : "Яндекс"}`}
+          title={tr("{0} через {1}", mode === "register" ? tr("Зарегистрироваться") : tr("Войти"), p === "google" ? "Google" : tr("Яндекс"))}
           kind="ghost"
           disabled={busy}
           onPress={() => void start(p)}

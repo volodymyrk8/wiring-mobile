@@ -1,3 +1,4 @@
+import { getLanguage, tr } from "../i18n";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { API_URL } from "./config";
@@ -34,9 +35,10 @@ export function mediaUrl(value?: Photo | null): string {
 
 export const api: Api = createApi({
   baseUrl: API_URL,
+  translate: tr,
   version: APP_VERSION,
   platform: Platform.OS,
-  fetchFn: (input, init) => fetch(input, init),
+  fetchFn: (input, init) => fetch(input, { ...init, headers: { "X-Wiring-Language": getLanguage(), ...(init?.headers as Record<string, string>) } }),
   tokens: {
     get: (key) => getToken(key),
     set: (key, value) => setToken(key, value),
@@ -64,10 +66,10 @@ export const endpoints = {
     user_id: number,
     action: "unlike" | "restore" | "unblock" | "unmatch",
   ) => api<Archive>("/api/archive", json({ user_id, action })),
-  consents: (special_data_consent: boolean, photo_rights_consent: boolean) =>
+  consents: (special_data_consent: boolean) =>
     api<{ user: Me }>(
       "/api/me/consents",
-      json({ special_data_consent, photo_rights_consent }, "PATCH"),
+      json({ special_data_consent }, "PATCH"),
     ),
   plus: (body: { incognito?: boolean; paused?: boolean }) =>
     api<{ user: Me }>("/api/plus", json(body, "PATCH")),
@@ -129,7 +131,7 @@ export const endpoints = {
     ),
   logout: (refresh_token: string | null, push_token: string | null) =>
     api("/api/auth/logout", json({ refresh_token, push_token })),
-  catalog: () => api<Catalog>("/api/catalog"),
+  catalog: (language = getLanguage()) => api<Catalog>("/api/catalog", { headers: { "X-Wiring-Language": language } }),
   feed: (skip: number[] = [], filters?: Filters, signal?: AbortSignal) => {
     const q = [
       filters ? filtersQuery(filters) : "hide_empty=1",
@@ -219,7 +221,6 @@ export const endpoints = {
   uploadPhoto: (uri: string, mime: string, name: string) => {
     const form = new FormData();
     form.append("file", { uri, name, type: mime } as any);
-    form.append("photo_rights_consent", "1");
     return api<{ photo: { id: number; url: string } }>("/api/photos", {
       method: "POST",
       body: form,

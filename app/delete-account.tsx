@@ -1,3 +1,4 @@
+import { tr, useLanguage } from "../src/i18n";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import { useAuth } from "../src/auth";
@@ -5,6 +6,7 @@ import { endpoints } from "../src/api/client";
 import { Page, Title, Hint, Check, Confirm } from "../src/ui/Page";
 import { Button, Field, ErrorText } from "../src/ui/kit";
 export default function DeleteAccount() {
+  useLanguage();
   const { logout } = useAuth();
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -19,30 +21,25 @@ export default function DeleteAccount() {
       await logout();
       router.replace("/");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось удалить");
+      setError(e instanceof Error ? e.message : tr("Не удалось удалить"));
     } finally {
       setBusy(false);
     }
   };
   return (
-    <Page title="удаление">
-      <Title>Удаление аккаунта</Title>
+    <Page title={tr("удаление")}>
+      <Title>{tr("Удаление аккаунта")}</Title>
       <Hint>
-        Профиль сразу пропадёт из публичного доступа: ты исчезнешь из ленты,
-        поиска и чатов. Восстановить профиль можно в течение 7 суток входом с
-        тем же паролем. После этого данные удалятся полностью.
-      </Hint>
+        {tr("Профиль сразу пропадёт из публичного доступа: ты исчезнешь из ленты, поиска и чатов. Восстановить профиль можно в течение 7 суток входом с тем же паролем. После этого данные удалятся полностью.")}</Hint>
       <Hint>
-        Если зарегистрировались через Google или Яндекс, сначала задайте пароль
-        через сброс пароля.
-      </Hint>
+        {tr("Если зарегистрировались через Google или Яндекс, сначала задайте пароль через сброс пароля.")}</Hint>
       <Button
-        title="Задать пароль через сброс пароля"
+        title={tr("Задать пароль через сброс пароля")}
         kind="ghost"
         onPress={() => router.push("/forgot")}
       />
       <Field
-        label="Текущий пароль"
+        label={tr("Текущий пароль")}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -50,20 +47,20 @@ export default function DeleteAccount() {
       <Check
         checked={checked}
         onChange={setChecked}
-        label="Подтверждаю удаление своего профиля"
+        label={tr("Подтверждаю удаление своего профиля")}
       />
       <ErrorText>{error}</ErrorText>
       <Button
-        title="Удалить аккаунт навсегда"
+        title={tr("Удалить аккаунт навсегда")}
         kind="danger"
         disabled={!password || !checked}
         onPress={() => setConfirm(true)}
       />
       {confirm && (
         <Confirm
-          title="Удалить аккаунт?"
-          body="Анкета сразу скроется. В течение 7 суток её можно восстановить."
-          label="Удалить"
+          title={tr("Удалить аккаунт?")}
+          body={tr("Анкета сразу скроется. В течение 7 суток её можно восстановить.")}
+          label={tr("Удалить")}
           busy={busy}
           onConfirm={() => void remove()}
           onClose={() => !busy && setConfirm(false)}

@@ -1,6 +1,7 @@
+import { tr, useLanguage } from "../i18n";
 import { Text } from "./Typography";
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FlatList, Modal, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../theme";
@@ -12,9 +13,9 @@ export function CityPicker({
   onClose,
   onPick,
   allowAny,
-  anyLabel = "Любой город",
+  anyLabel = tr("Любой город"),
   includeCountries,
-  title = "Город",
+  title = tr("Город"),
 }: {
   visible: boolean;
   places: { country: string; cities: string[] }[];
@@ -25,11 +26,12 @@ export function CityPicker({
   includeCountries?: boolean;
   title?: string;
 }) {
+  useLanguage();
   const t = useTheme();
   const [q, setQ] = useState("");
-  const rows = useMemo(() => {
+  const rows = (() => {
     const flat = places.flatMap((p) => [
-      ...(includeCountries ? [{ city: p.country, country: "вся страна" }] : []),
+      ...(includeCountries ? [{ city: p.country, country: tr("вся страна") }] : []),
       ...p.cities.map((c) => ({ city: c, country: p.country })),
     ]);
     const needle = q.trim().toLowerCase();
@@ -37,12 +39,12 @@ export function CityPicker({
       needle
         ? flat.filter(
             (r) =>
-              r.city.toLowerCase().includes(needle) ||
-              r.country.toLowerCase().includes(needle),
+              [r.city, tr(r.city)].some(value => value.toLowerCase().includes(needle)) ||
+              [r.country, tr(r.country)].some(value => value.toLowerCase().includes(needle)),
           )
         : flat
     ).slice(0, 80);
-  }, [places, q, includeCountries]);
+  })();
   return (
     <Modal
       visible={visible}
@@ -63,12 +65,12 @@ export function CityPicker({
             <Text style={{ color: t.text, fontSize: 20, fontWeight: "800" }}>
               {title}
             </Text>
-            <Pressable onPress={onClose} accessibilityLabel="Закрыть">
+            <Pressable onPress={onClose} accessibilityLabel={tr("Закрыть")}>
               <Ionicons name="close" size={26} color={t.text} />
             </Pressable>
           </View>
           <Field
-            label="Поиск"
+            label={tr("Поиск")}
             icon="search"
             value={q}
             onChangeText={setQ}
@@ -105,10 +107,10 @@ export function CityPicker({
               }}
             >
               <Text style={{ color: t.text, fontSize: 17, fontWeight: "600" }}>
-                {item.city}
+                {tr(item.city)}
               </Text>
               <Text style={{ color: t.muted, fontSize: 13 }}>
-                {item.country}
+                {tr(item.country)}
               </Text>
             </Pressable>
           )}

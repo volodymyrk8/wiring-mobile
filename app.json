@@ -381,7 +381,12 @@
     "scheme": "wiring",
     "backgroundColor": "#e9ebf3",
     "extra": {
-      "apiUrl": "https://wiring.club"
-    }
+      "apiUrl": "https://wiring.club",
+      "router": {},
+      "eas": {
+        "projectId": "849a1504-0766-4b10-a065-bcd70d7dfd7e"
+      }
+    },
+    "owner": "wirings-team"
   }
 }
