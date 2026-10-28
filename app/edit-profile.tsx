@@ -353,9 +353,8 @@ export default function EditProfile({
       />
       <SectionTitle>{tr("Что ищешь")}</SectionTitle>
       {choices("intents", catalog.intents)}
-      <SectionTitle>{tr("О себе")}</SectionTitle>
       <Field
-        label={tr("О себе")}
+        label={tr("Био")}
         value={draft.bio}
         onChangeText={(v) => set("bio", v)}
         multiline
@@ -369,7 +368,7 @@ export default function EditProfile({
         multiline
         maxLength={500}
       />
-      <SectionTitle>{tr("Особенности")}</SectionTitle>
+      <SectionTitle>{tr("Мои особенности")}</SectionTitle>
       <Check
         checked={draft.special_data_consent}
         onChange={(v) => set("special_data_consent", v)}
